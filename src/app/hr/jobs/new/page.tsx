@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -44,6 +44,17 @@ export default function NewJobPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    fetch("/api/hr/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.profile?.officeLocation) {
+          setLocation(data.profile.officeLocation);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleAddReqSkill = () => {
     const val = reqSkillInput.trim();

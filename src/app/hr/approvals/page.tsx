@@ -28,6 +28,7 @@ export default function HrApprovalsPage() {
   const [offeredSalary, setOfferedSalary] = useState(135000);
   const [joiningDate, setJoiningDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -38,17 +39,25 @@ export default function HrApprovalsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [appRes, offRes] = await Promise.all([
+      const [appRes, offRes, profRes] = await Promise.all([
         fetch("/api/applications"),
         fetch("/api/offers"),
+        fetch("/api/hr/profile"),
       ]);
-      const [appData, offData] = await Promise.all([appRes.json(), offRes.json()]);
+      const [appData, offData, profData] = await Promise.all([
+        appRes.json(),
+        offRes.json(),
+        profRes.json().catch(() => ({})),
+      ]);
 
       if (appData.success) {
         setCandidates(appData.applications || []);
       }
       if (offData.success) {
         setOffers(offData.offers || []);
+      }
+      if (profData?.profile?.companyName) {
+        setCompanyName(profData.profile.companyName);
       }
     } catch (e) {
       console.error("Failed to load approvals", e);
@@ -86,6 +95,7 @@ export default function HrApprovalsPage() {
           offeredSalary,
           joiningDate,
           expiryDate,
+          companyName: companyName || undefined,
         }),
       });
 

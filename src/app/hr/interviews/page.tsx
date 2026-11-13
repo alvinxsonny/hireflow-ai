@@ -37,11 +37,16 @@ export default function HrInterviewsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [intRes, candRes] = await Promise.all([
+      const [intRes, candRes, profRes] = await Promise.all([
         fetch("/api/interviews"),
         fetch("/api/applications"),
+        fetch("/api/hr/profile"),
       ]);
-      const [intData, candData] = await Promise.all([intRes.json(), candRes.json()]);
+      const [intData, candData, profData] = await Promise.all([
+        intRes.json(),
+        candRes.json(),
+        profRes.json().catch(() => ({})),
+      ]);
 
       if (intData.success) setInterviews(intData.interviews || []);
       if (candData.success) {
@@ -49,6 +54,11 @@ export default function HrInterviewsPage() {
         if (candData.applications && candData.applications.length > 0) {
           setSelectedAppId(candData.applications[0].id);
         }
+      }
+      if (profData?.profile) {
+        const p = profData.profile;
+        const formatted = p.designation ? `${p.fullName} (${p.designation})` : p.fullName;
+        if (formatted) setInterviewerName(formatted);
       }
     } catch (e) {
       console.error("Failed to load interview data", e);

@@ -163,10 +163,12 @@ export default function CandidateOfferPage() {
         <div className="flex items-start justify-between border-b pb-8 mb-8">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-blue-500/20">
-              H
+              {(offer.companyName || "H").charAt(0).toUpperCase()}
             </div>
             <div>
-              <span className="font-extrabold text-xl text-slate-900 tracking-tight">HireFlow AI Inc.</span>
+              <span className="font-extrabold text-xl text-slate-900 tracking-tight">
+                {offer.companyName || "HireFlow AI Inc."}
+              </span>
               <p className="text-xs text-slate-400">Official Employment Offer & Agreement</p>
             </div>
           </div>
@@ -201,7 +203,7 @@ export default function CandidateOfferPage() {
           </p>
 
           <p>
-            On behalf of <strong>HireFlow AI Inc.</strong>, we are thrilled to formally extend this offer of employment for the position of <strong>{offer.designation}</strong>. Based on your impressive technical assessment results, portfolio achievements, and interview discussions, our team is confident you will make exceptional contributions to our engineering mission.
+            On behalf of <strong>{offer.companyName || "HireFlow AI"}</strong>, we are thrilled to formally extend this offer of employment for the position of <strong>{offer.designation}</strong>. Based on your impressive technical assessment results, portfolio achievements, and interview discussions, our team is confident you will make exceptional contributions to our team.
           </p>
 
           <div className="my-6 p-6 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose text-xs">

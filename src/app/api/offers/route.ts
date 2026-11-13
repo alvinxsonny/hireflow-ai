@@ -24,6 +24,7 @@ export async function POST(request: Request) {
       joiningDate,
       expiryDate,
       benefits,
+      companyName,
     } = body;
 
     if (!applicationId || !designation || !offeredSalary || !joiningDate) {
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
       candidateEmail: application.candidateEmail,
       jobTitle: application.jobTitle,
       designation,
+      companyName: companyName || undefined,
       offeredSalary: Number(offeredSalary),
       joiningDate,
       expiryDate: expiryDate || new Date(Date.now() + 86400000 * 7).toISOString().split("T")[0],

@@ -5,6 +5,7 @@ export interface OfferRecord {
   candidateEmail: string;
   jobTitle: string;
   designation: string;
+  companyName?: string;
   offeredSalary: number;
   joiningDate: string;
   expiryDate: string;
