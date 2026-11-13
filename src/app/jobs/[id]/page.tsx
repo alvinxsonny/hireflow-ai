@@ -411,3 +411,4 @@ export default function JobDetailPage() {
     </div>
   );
 }
+

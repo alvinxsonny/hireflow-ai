@@ -35,6 +35,9 @@ export function Navbar() {
           <Link href="/hr/jobs" className="hover:text-blue-600 transition">
             Manage Jobs
           </Link>
+          <Link href="/hr/candidates" className="hover:text-blue-600 transition font-medium text-indigo-600">
+            Screening Pipeline
+          </Link>
           <Link href="/hr/dashboard" className="hover:text-blue-600 transition">
             HR Dashboard
           </Link>

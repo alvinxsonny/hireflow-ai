@@ -233,3 +233,4 @@ export async function createJob(data: Omit<JobPostingData, "id" | "createdAt" | 
     return job;
   }
 }
+

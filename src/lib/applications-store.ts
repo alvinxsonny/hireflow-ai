@@ -26,6 +26,11 @@ export interface ApplicationRecord {
     | "REJECTED";
   matchScore?: number;
   aiSummary?: string;
+  matchedSkills?: string[];
+  missingSkills?: string[];
+  strengths?: string[];
+  weaknesses?: string[];
+  recommendation?: string;
   createdAt: string;
 }
 
@@ -44,6 +49,14 @@ let inMemoryApplications: ApplicationRecord[] = [
     status: "HR_REVIEW",
     matchScore: 94,
     aiSummary: "Exceptional candidate with 6 years experience in Next.js, TypeScript, PostgreSQL and AI integrations.",
+    matchedSkills: ["TypeScript", "Next.js", "React", "Node.js", "PostgreSQL"],
+    missingSkills: ["pgvector"],
+    strengths: [
+      "Demonstrated lead architect experience with modern Next.js 14 and SSR.",
+      "Extensive background in scalable PostgreSQL relational schemas.",
+    ],
+    weaknesses: ["Needs verification on vector database indexing."],
+    recommendation: "STRONG_SHORTLIST",
     createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
   },
   {
@@ -60,7 +73,26 @@ let inMemoryApplications: ApplicationRecord[] = [
     status: "ASSESSMENT_PENDING",
     matchScore: 91,
     aiSummary: "Strong background in PyTorch, Gemini API integration, and prompt engineering.",
+    matchedSkills: ["Python", "Machine Learning", "LLMs", "Prompt Engineering"],
+    missingSkills: ["FastAPI"],
+    strengths: ["Strong publishing record in LLM evaluation and safety.", "Proven prompt engineering techniques."],
+    weaknesses: ["Minor gap in enterprise API gateway frameworks."],
+    recommendation: "SHORTLIST",
     createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+  },
+  {
+    id: "app-103",
+    jobId: "job-1",
+    jobTitle: "Senior Full-Stack Engineer",
+    candidateName: "Carlos Mendez",
+    candidateEmail: "carlos.mendez@example.com",
+    candidatePhone: "+1 (555) 345-6789",
+    coverLetter: "Applying with strong backend and cloud background.",
+    resumeFileName: "carlos_mendez_resume.pdf",
+    resumeFileUrl: "/uploads/resumes/mock-resume-3.pdf",
+    status: "APPLIED",
+    matchScore: undefined,
+    createdAt: new Date().toISOString(),
   },
 ];
 
@@ -134,3 +166,19 @@ export async function getApplications(filter?: { candidateEmail?: string; jobId?
 export async function getApplicationById(id: string) {
   return inMemoryApplications.find((a) => a.id === id) || null;
 }
+
+export async function updateApplicationRecord(
+  id: string,
+  updates: Partial<ApplicationRecord>
+) {
+  const index = inMemoryApplications.findIndex((a) => a.id === id);
+  if (index !== -1) {
+    inMemoryApplications[index] = {
+      ...inMemoryApplications[index],
+      ...updates,
+    };
+    return inMemoryApplications[index];
+  }
+  return null;
+}
+

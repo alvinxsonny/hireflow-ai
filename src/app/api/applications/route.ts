@@ -1,8 +1,53 @@
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { createApplicationRecord } from "@/lib/applications-store";
+import {
+  createApplicationRecord,
+  getApplications,
+  updateApplicationRecord,
+} from "@/lib/applications-store";
 import { getJobById } from "@/lib/jobs-store";
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const candidateEmail = searchParams.get("email") || undefined;
+    const jobId = searchParams.get("jobId") || undefined;
+
+    const applications = await getApplications({ candidateEmail, jobId });
+    return NextResponse.json({ success: true, applications });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message || "Failed to fetch applications" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const { id, status } = await request.json();
+
+    if (!id || !status) {
+      return NextResponse.json(
+        { success: false, error: "Application id and status are required" },
+        { status: 400 }
+      );
+    }
+
+    const updated = await updateApplicationRecord(id, { status });
+    if (!updated) {
+      return NextResponse.json({ success: false, error: "Application not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, application: updated });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message || "Failed to update application" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -82,3 +127,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

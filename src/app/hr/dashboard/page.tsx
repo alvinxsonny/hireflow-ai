@@ -144,9 +144,12 @@ export default function HrDashboardPage() {
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right">
-                    <button className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline">
-                      Review & Approve
-                    </button>
+                    <Link
+                      href="/hr/candidates"
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      View AI Diagnostics &rarr;
+                    </Link>
                   </td>
                 </tr>
               ))}
