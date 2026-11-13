@@ -1,0 +1,303 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector"), uuidOssp(map: "uuid-ossp")]
+}
+
+enum UserRole {
+  ADMIN
+  RECRUITER
+  HIRING_MANAGER
+  CANDIDATE
+}
+
+enum PortalAccess {
+  CANDIDATE
+  HR
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SCREENED
+  SHORTLISTED
+  ASSESSMENT_PENDING
+  ASSESSMENT_COMPLETED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  HR_REVIEW
+  OFFER_PENDING
+  OFFER_ACCEPTED
+  OFFER_REJECTED
+  ONBOARDING
+  HIRED
+  REJECTED
+}
+
+enum AssessmentType {
+  TECHNICAL
+  APTITUDE
+  MIXED
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum OfferStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum DocumentStatus {
+  PENDING
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  passwordHash  String?      @map("password_hash")
+  googleId      String?      @unique @map("google_id")
+  fullName      String       @map("full_name")
+  phone         String?
+  role          UserRole     @default(CANDIDATE)
+  portalAccess  PortalAccess @default(CANDIDATE) @map("portal_access")
+  avatarUrl     String?      @map("avatar_url")
+  emailVerified Boolean      @default(false) @map("email_verified")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  createdJobs        JobPosting[]
+  applications       Application[]
+  interviews         Interview[]         @relation("Interviewer")
+  hrApprovals        HrApproval[]        @relation("Approver")
+  onboardingProfiles OnboardingProfile[]
+
+  @@map("users")
+}
+
+model JobPosting {
+  id                  String    @id @default(uuid())
+  title               String
+  department          String?
+  location            String
+  employmentType      String    @default("Full-time") @map("employment_type")
+  experienceLevel     String?   @map("experience_level")
+  minExperienceYears  Int       @default(0) @map("min_experience_years")
+  salaryRangeMin      Decimal?  @map("salary_range_min") @db.Decimal(12, 2)
+  salaryRangeMax      Decimal?  @map("salary_range_max") @db.Decimal(12, 2)
+  description         String
+  requiredSkills      String[]  @default([]) @map("required_skills")
+  preferredSkills     String[]  @default([]) @map("preferred_skills")
+  status              JobStatus @default(DRAFT)
+  createdById         String?   @map("created_by")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  createdBy    User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  applications Application[]
+
+  @@map("job_postings")
+}
+
+model Application {
+  id          String            @id @default(uuid())
+  jobId       String            @map("job_id")
+  candidateId String            @map("candidate_id")
+  status      ApplicationStatus @default(APPLIED)
+  coverLetter String?           @map("cover_letter")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  job               JobPosting         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate         User               @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  resume            Resume?
+  assessments       Assessment[]
+  interviews        Interview[]
+  hrApproval        HrApproval?
+  offerLetter       OfferLetter?
+  onboardingProfile OnboardingProfile?
+
+  @@unique([jobId, candidateId])
+  @@map("applications")
+}
+
+model Resume {
+  id            String   @id @default(uuid())
+  applicationId String   @unique @map("application_id")
+  fileUrl       String   @map("file_url")
+  rawText       String?  @map("raw_text")
+  parsedData    Json?    @map("parsed_data")
+  parsedSkills  String[] @default([]) @map("parsed_skills")
+  matchScore    Decimal? @map("match_score") @db.Decimal(5, 2)
+  aiSummary     String?  @map("ai_summary")
+  aiStrengths   String[] @default([]) @map("ai_strengths")
+  aiWeaknesses  String[] @default([]) @map("ai_weaknesses")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("resumes")
+}
+
+model Assessment {
+  id              String         @id @default(uuid())
+  applicationId   String         @map("application_id")
+  assessmentType  AssessmentType @default(MIXED) @map("assessment_type")
+  totalScore      Decimal        @default(0) @map("total_score") @db.Decimal(5, 2)
+  passingScore    Decimal        @default(60.0) @map("passing_score") @db.Decimal(5, 2)
+  timeLimitMins   Int            @default(45) @map("time_limit_minutes")
+  startedAt       DateTime?      @map("started_at")
+  submittedAt     DateTime?      @map("submitted_at")
+  isPassed        Boolean        @default(false) @map("is_passed")
+  proctoringScore Decimal        @default(100.0) @map("proctoring_score") @db.Decimal(5, 2)
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  application    Application          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  questions      AssessmentQuestion[]
+  proctoringLogs ProctoringLog[]
+
+  @@map("assessments")
+}
+
+model AssessmentQuestion {
+  id              String   @id @default(uuid())
+  assessmentId    String   @map("assessment_id")
+  questionText    String   @map("question_text")
+  questionType    String   @default("MCQ") @map("question_type")
+  options         Json?
+  correctAnswer   String?  @map("correct_answer")
+  candidateAnswer String?  @map("candidate_answer")
+  scoreObtained   Decimal  @default(0) @map("score_obtained") @db.Decimal(5, 2)
+  isCorrect       Boolean  @default(false) @map("is_correct")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("assessment_questions")
+}
+
+model ProctoringLog {
+  id           String   @id @default(uuid())
+  assessmentId String   @map("assessment_id")
+  eventType    String   @map("event_type")
+  snapshotUrl  String?  @map("snapshot_url")
+  details      Json?
+  timestamp    DateTime @default(now())
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("proctoring_logs")
+}
+
+model Interview {
+  id                   String          @id @default(uuid())
+  applicationId        String          @map("application_id")
+  interviewerId        String?         @map("interviewer_id")
+  scheduledAt          DateTime        @map("scheduled_at")
+  meetingLink          String?         @map("meeting_link")
+  status               InterviewStatus @default(SCHEDULED)
+  aiSuggestedQuestions Json?           @map("ai_suggested_questions")
+  feedbackNotes        String?         @map("feedback_notes")
+  technicalRating      Int?            @map("technical_rating")
+  communicationRating  Int?            @map("communication_rating")
+  recommendation       String?
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  interviewer User?       @relation("Interviewer", fields: [interviewerId], references: [id], onDelete: SetNull)
+
+  @@map("interviews")
+}
+
+model HrApproval {
+  id                  String   @id @default(uuid())
+  applicationId       String   @unique @map("application_id")
+  reviewedById        String   @map("reviewed_by")
+  decision            String
+  comments            String?
+  approvedSalary      Decimal? @map("approved_salary") @db.Decimal(12, 2)
+  approvedDesignation String?  @map("approved_designation")
+  decidedAt           DateTime @default(now()) @map("decided_at")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  reviewedBy  User        @relation("Approver", fields: [reviewedById], references: [id])
+
+  @@map("hr_approvals")
+}
+
+model OfferLetter {
+  id                     String      @id @default(uuid())
+  applicationId          String      @unique @map("application_id")
+  documentUrl            String      @map("document_url")
+  offeredSalary          Decimal     @map("offered_salary") @db.Decimal(12, 2)
+  joiningDate            DateTime    @map("joining_date")
+  expiryDate             DateTime    @map("expiry_date")
+  status                 OfferStatus @default(DRAFT)
+  candidateSignatureUrl  String?     @map("candidate_signature_url")
+  signatureTimestamp     DateTime?   @map("signature_timestamp")
+  sentAt                 DateTime?   @map("sent_at")
+  createdAt              DateTime    @default(now()) @map("created_at")
+  updatedAt              DateTime    @updatedAt @map("updated_at")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("offer_letters")
+}
+
+model OnboardingProfile {
+  id                String    @id @default(uuid())
+  applicationId     String    @unique @map("application_id")
+  userId            String    @map("user_id")
+  employeeCode      String?   @unique @map("employee_code")
+  department        String?
+  joiningDate       DateTime? @map("joining_date")
+  emergencyContact  Json?     @map("emergency_contact")
+  bankDetails       Json?     @map("bank_details")
+  orientationStatus String    @default("NOT_STARTED") @map("orientation_status")
+  checklistProgress Decimal   @default(0.0) @map("checklist_progress") @db.Decimal(5, 2)
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  application Application          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents   OnboardingDocument[]
+
+  @@map("onboarding_profiles")
+}
+
+model OnboardingDocument {
+  id                  String         @id @default(uuid())
+  onboardingProfileId String         @map("onboarding_profile_id")
+  docType             String         @map("doc_type")
+  fileUrl             String         @map("file_url")
+  status              DocumentStatus @default(PENDING)
+  rejectionReason     String?        @map("rejection_reason")
+  aiValidationDetails Json?          @map("ai_validation_details")
+  uploadedAt          DateTime       @default(now()) @map("uploaded_at")
+  reviewedAt          DateTime?      @map("reviewed_at")
+
+  onboardingProfile OnboardingProfile @relation(fields: [onboardingProfileId], references: [id], onDelete: Cascade)
+
+  @@map("onboarding_documents")
+}

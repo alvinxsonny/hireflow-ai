@@ -1,0 +1,45 @@
+Project Name: HireFlow AI
+AI-Powered Recruitment & Employee Onboarding Platform
+
+Tagline: Smarter Hiring. Seamless Onboarding.
+1. Problem Statement
+Traditional recruitment and employee onboarding processes are often time-consuming, repetitive, and difficult to manage efficiently. HR teams must manually review large numbers of resumes, shortlist suitable candidates, conduct assessments, schedule interviews, evaluate performance, generate offer letters, and complete onboarding procedures.
+
+These manual processes can lead to delays, inconsistent candidate evaluations, increased administrative workload, and difficulties in tracking candidates throughout the recruitment lifecycle.
+
+There is a need for a centralized, intelligent recruitment platform that can automate repetitive hiring activities while maintaining human involvement in important decisions.
+
+HireFlow AI aims to address these challenges by providing an AI-powered recruitment and onboarding system that simplifies candidate screening, assessment, interview management, offer generation, and employee onboarding through a single integrated web application.
+2. Project Description
+HireFlow AI is a web-based recruitment and employee onboarding platform designed to streamline the entire hiring process using Artificial Intelligence and automation.
+
+The platform allows HR professionals to upload job descriptions containing required skills, qualifications, and experience. An AI-powered resume screening system analyzes uploaded resumes, extracts relevant candidate information, compares qualifications against job requirements, and ranks candidates based on their suitability.
+
+Shortlisted candidates can proceed to online technical and aptitude assessments, where their performance is evaluated. The system also supports interview scheduling, candidate evaluation, and feedback management.
+
+Once the recruitment stages are completed, HR personnel review candidate performance and make the final hiring decision. The platform then assists with generating offer letters, tracking candidate acceptance, collecting employee documents, and managing onboarding activities.
+
+By combining AI-driven automation with human decision-making, HireFlow AI aims to reduce recruitment workload, improve hiring efficiency, and provide a smoother experience for both recruiters and candidates.
+3. Key Features of HireFlow AI
+Module	Description
+1. Job Description Management	HR uploads job descriptions and defines hiring requirements.
+2. AI Resume Screening	Extracts resume details, matches skills, ranks candidates, and recommends shortlists.
+3. Online Assessment	Conducts technical and aptitude tests with basic online proctoring capabilities.
+4. Interview Management	Manages interview scheduling, questions, candidate status, and feedback.
+5. HR Approval	Allows HR professionals to review results and approve final candidates.
+6. Offer Letter Generation	Generates personalized offer letters and tracks candidate acceptance.
+7. Employee Onboarding	Handles employee document submission, profile creation, and onboarding checklists.
+
+4. Objectives of the Project
+- Reduce manual effort involved in resume screening and candidate shortlisting.
+- Improve candidate-job matching using AI-based analysis.
+- Simplify online assessments and interview management.
+- Provide a centralized dashboard for monitoring recruitment progress.
+- Automate offer letter generation and basic employee onboarding tasks.
+- Ensure final hiring decisions remain under human HR supervision.
+5. Expected Outcome
+The final product will be a functional web application where an HR administrator can manage the recruitment process from uploading a job description to onboarding a selected candidate.
+
+Candidates will be able to apply for jobs, participate in assessments, track their application status, and complete onboarding requirements after selection.
+
+The system will demonstrate how AI and automation can make recruitment faster, more organized, and easier to manage.
