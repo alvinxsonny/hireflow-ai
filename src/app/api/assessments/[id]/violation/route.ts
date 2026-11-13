@@ -25,7 +25,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      currentProctoringScore: result.test.proctoringScore,
+      currentProctoringScore: result.test?.proctoringScore ?? 100,
       violation: result.violation,
     });
   } catch (error: any) {

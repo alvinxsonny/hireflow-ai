@@ -14,7 +14,7 @@ export interface CandidateProfileData {
 let inMemoryProfiles: Record<string, CandidateProfileData> = {};
 
 export async function getCandidateProfile(email: string): Promise<CandidateProfileData> {
-  const normalizedEmail = email.toLowerCase();
+  const normalizedEmail = email.toLowerCase().trim();
 
   try {
     const user = await prisma.user.findUnique({
@@ -22,63 +22,35 @@ export async function getCandidateProfile(email: string): Promise<CandidateProfi
     });
 
     if (user) {
-      return {
+      const candidatePhone = user.phone || inMemoryProfiles[normalizedEmail]?.phone || "";
+      const headline = user.headline || inMemoryProfiles[normalizedEmail]?.headline || "";
+
+      const profile: CandidateProfileData = {
         email: user.email,
-        fullName: user.fullName,
-        phone: user.phone || inMemoryProfiles[normalizedEmail]?.phone || "",
-        headline: inMemoryProfiles[normalizedEmail]?.headline || "",
-        portfolioUrl: inMemoryProfiles[normalizedEmail]?.portfolioUrl || "",
-        skills: inMemoryProfiles[normalizedEmail]?.skills || [],
-        bio: inMemoryProfiles[normalizedEmail]?.bio || "",
-        isProfileComplete: !!(user.phone || inMemoryProfiles[normalizedEmail]?.phone),
+        fullName: user.fullName || "",
+        phone: candidatePhone,
+        headline,
+        portfolioUrl: user.portfolioUrl || inMemoryProfiles[normalizedEmail]?.portfolioUrl || "",
+        skills: user.skills && user.skills.length > 0 ? user.skills : (inMemoryProfiles[normalizedEmail]?.skills || []),
+        bio: user.bio || inMemoryProfiles[normalizedEmail]?.bio || "",
+        isProfileComplete: Boolean(candidatePhone && headline),
       };
+
+      inMemoryProfiles[normalizedEmail] = profile;
+      return profile;
     }
   } catch (e) {
-    // Database offline or fallback
+    console.error("[getCandidateProfile] DB query error:", e);
   }
 
-  return (
-    inMemoryProfiles[normalizedEmail] || {
-      email: normalizedEmail,
-      fullName: "",
-      phone: "",
-      headline: "",
-      portfolioUrl: "",
-      skills: [],
-      bio: "",
-      isProfileComplete: false,
-    }
-  );
-}
-
-export async function saveCandidateProfile(
-  email: string,
-  data: Partial<CandidateProfileData>
-): Promise<CandidateProfileData> {
-  const normalizedEmail = email.toLowerCase();
-
-  try {
-    await prisma.user.upsert({
-      where: { email: normalizedEmail },
-      update: {
-        fullName: data.fullName,
-        phone: data.phone,
-      },
-      create: {
-        email: normalizedEmail,
-        fullName: data.fullName || "Candidate",
-        phone: data.phone,
-        role: "CANDIDATE",
-        portalAccess: "CANDIDATE",
-      },
-    });
-  } catch (e) {
-    console.warn("Could not save to PostgreSQL, persisting in store:", e);
+  const cached = inMemoryProfiles[normalizedEmail];
+  if (cached) {
+    return cached;
   }
 
-  const existing = inMemoryProfiles[normalizedEmail] || {
+  return {
     email: normalizedEmail,
-    fullName: data.fullName || "",
+    fullName: "",
     phone: "",
     headline: "",
     portfolioUrl: "",
@@ -86,15 +58,73 @@ export async function saveCandidateProfile(
     bio: "",
     isProfileComplete: false,
   };
-
-  const updated: CandidateProfileData = {
-    ...existing,
-    ...data,
-    email: normalizedEmail,
-    isProfileComplete: !!(data.phone || existing.phone),
-  };
-
-  inMemoryProfiles[normalizedEmail] = updated;
-  return updated;
 }
 
+export async function saveCandidateProfile(
+  email: string,
+  data: Partial<CandidateProfileData>
+): Promise<CandidateProfileData> {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  try {
+    const user = await prisma.user.upsert({
+      where: { email: normalizedEmail },
+      update: {
+        fullName: data.fullName,
+        phone: data.phone,
+        headline: data.headline,
+        portfolioUrl: data.portfolioUrl,
+        skills: data.skills,
+        bio: data.bio,
+      },
+      create: {
+        email: normalizedEmail,
+        fullName: data.fullName || "Candidate",
+        phone: data.phone,
+        headline: data.headline,
+        portfolioUrl: data.portfolioUrl,
+        skills: data.skills || [],
+        bio: data.bio,
+        role: "CANDIDATE",
+        portalAccess: "CANDIDATE",
+      },
+    });
+
+    const result: CandidateProfileData = {
+      email: user.email,
+      fullName: user.fullName || "",
+      phone: user.phone || "",
+      headline: user.headline || "",
+      portfolioUrl: user.portfolioUrl || "",
+      skills: user.skills || [],
+      bio: user.bio || "",
+      isProfileComplete: Boolean(user.phone && user.headline),
+    };
+
+    inMemoryProfiles[normalizedEmail] = result;
+    return result;
+  } catch (e) {
+    console.error("[saveCandidateProfile] DB upsert error:", e);
+
+    const existing = inMemoryProfiles[normalizedEmail] || {
+      email: normalizedEmail,
+      fullName: data.fullName || "",
+      phone: "",
+      headline: "",
+      portfolioUrl: "",
+      skills: [],
+      bio: "",
+      isProfileComplete: false,
+    };
+
+    const updated: CandidateProfileData = {
+      ...existing,
+      ...data,
+      email: normalizedEmail,
+      isProfileComplete: Boolean((data.phone ?? existing.phone) && (data.headline ?? existing.headline)),
+    };
+
+    inMemoryProfiles[normalizedEmail] = updated;
+    return updated;
+  }
+}

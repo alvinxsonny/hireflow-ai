@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { GeneratedQuestion } from "@/lib/assessment-generator";
 
 export interface ProctoringViolation {
@@ -26,10 +27,11 @@ export interface AssessmentRecord {
   createdAt: string;
 }
 
-// Empty initial assessments — generated dynamically when HR approves a candidate for testing
 let inMemoryAssessments: AssessmentRecord[] = [];
 
-export async function createAssessment(data: Omit<AssessmentRecord, "id" | "createdAt" | "proctoringScore" | "violations" | "candidateAnswers">) {
+export async function createAssessment(
+  data: Omit<AssessmentRecord, "id" | "createdAt" | "proctoringScore" | "violations" | "candidateAnswers">
+): Promise<AssessmentRecord> {
   const newAssessment: AssessmentRecord = {
     id: `test-${Date.now()}`,
     ...data,
@@ -39,15 +41,141 @@ export async function createAssessment(data: Omit<AssessmentRecord, "id" | "crea
     createdAt: new Date().toISOString(),
   };
 
+  try {
+    const dbAssessment = await prisma.assessment.create({
+      data: {
+        applicationId: data.applicationId,
+        timeLimitMins: data.timeLimitMinutes,
+        proctoringScore: 100,
+        questions: {
+          create: data.questions.map((q) => ({
+            questionText: q.question,
+            options: q.options as any,
+            correctAnswer: String(q.correctAnswer),
+          })),
+        },
+      },
+    });
+
+    newAssessment.id = dbAssessment.id;
+  } catch (e) {
+    console.error("[createAssessment] DB error:", e);
+  }
+
   inMemoryAssessments.unshift(newAssessment);
   return newAssessment;
 }
 
-export async function getAssessmentById(id: string) {
+export async function getAssessmentById(id: string): Promise<AssessmentRecord | null> {
+  try {
+    const a = await prisma.assessment.findUnique({
+      where: { id },
+      include: {
+        application: {
+          include: {
+            candidate: true,
+            job: true,
+          },
+        },
+        questions: true,
+        proctoringLogs: true,
+      },
+    });
+
+    if (a) {
+      return {
+        id: a.id,
+        applicationId: a.applicationId,
+        candidateName: a.application.candidate.fullName,
+        candidateEmail: a.application.candidate.email,
+        jobTitle: a.application.job.title,
+        status: a.submittedAt ? "SUBMITTED" : a.startedAt ? "IN_PROGRESS" : "NOT_STARTED",
+        timeLimitMinutes: a.timeLimitMins,
+        questions: a.questions.map((q) => ({
+          id: q.id,
+          question: q.questionText,
+          options: (q.options as string[]) || [],
+          correctAnswer: Number(q.correctAnswer || 0),
+          explanation: "",
+          skill: "Technical",
+          type: "TECHNICAL" as const,
+        })),
+        candidateAnswers: {},
+        totalScore: a.totalScore ? Number(a.totalScore) : undefined,
+        isPassed: a.isPassed,
+        proctoringScore: a.proctoringScore ? Number(a.proctoringScore) : 100,
+        violations: a.proctoringLogs.map((p) => ({
+          id: p.id,
+          type: (p.eventType as any) || "TAB_SWITCH",
+          timestamp: p.timestamp.toISOString(),
+          message: (p.details as any)?.message || p.eventType,
+        })),
+        startedAt: a.startedAt?.toISOString() || undefined,
+        submittedAt: a.submittedAt?.toISOString() || undefined,
+        createdAt: a.createdAt.toISOString(),
+      };
+    }
+  } catch (e) {
+    console.error("[getAssessmentById] DB query error:", e);
+  }
+
   return inMemoryAssessments.find((a) => a.id === id) || null;
 }
 
-export async function getAssessmentByApplicationId(applicationId: string) {
+export async function getAssessmentByApplicationId(applicationId: string): Promise<AssessmentRecord | null> {
+  try {
+    const a = await prisma.assessment.findFirst({
+      where: { applicationId },
+      include: {
+        application: {
+          include: {
+            candidate: true,
+            job: true,
+          },
+        },
+        questions: true,
+        proctoringLogs: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (a) {
+      return {
+        id: a.id,
+        applicationId: a.applicationId,
+        candidateName: a.application.candidate.fullName,
+        candidateEmail: a.application.candidate.email,
+        jobTitle: a.application.job.title,
+        status: a.submittedAt ? "SUBMITTED" : a.startedAt ? "IN_PROGRESS" : "NOT_STARTED",
+        timeLimitMinutes: a.timeLimitMins,
+        questions: a.questions.map((q) => ({
+          id: q.id,
+          question: q.questionText,
+          options: (q.options as string[]) || [],
+          correctAnswer: Number(q.correctAnswer || 0),
+          explanation: "",
+          skill: "Technical",
+          type: "TECHNICAL" as const,
+        })),
+        candidateAnswers: {},
+        totalScore: a.totalScore ? Number(a.totalScore) : undefined,
+        isPassed: a.isPassed,
+        proctoringScore: a.proctoringScore ? Number(a.proctoringScore) : 100,
+        violations: a.proctoringLogs.map((p) => ({
+          id: p.id,
+          type: (p.eventType as any) || "TAB_SWITCH",
+          timestamp: p.timestamp.toISOString(),
+          message: (p.details as any)?.message || p.eventType,
+        })),
+        startedAt: a.startedAt?.toISOString() || undefined,
+        submittedAt: a.submittedAt?.toISOString() || undefined,
+        createdAt: a.createdAt.toISOString(),
+      };
+    }
+  } catch (e) {
+    console.error("[getAssessmentByApplicationId] DB error:", e);
+  }
+
   return inMemoryAssessments.find((a) => a.applicationId === applicationId) || null;
 }
 
@@ -56,9 +184,30 @@ export async function recordViolation(
   type: ProctoringViolation["type"],
   message: string
 ) {
-  const test = inMemoryAssessments.find((a) => a.id === assessmentId);
-  if (!test) return null;
+  const penalty = type === "TAB_SWITCH" ? 15 : type === "FULLSCREEN_EXIT" ? 10 : 5;
 
+  try {
+    await prisma.proctoringLog.create({
+      data: {
+        assessmentId,
+        eventType: type,
+        details: { message },
+      },
+    });
+
+    await prisma.assessment.update({
+      where: { id: assessmentId },
+      data: {
+        proctoringScore: {
+          decrement: penalty,
+        },
+      },
+    });
+  } catch (e) {
+    console.error("[recordViolation] DB error:", e);
+  }
+
+  const test = inMemoryAssessments.find((a) => a.id === assessmentId);
   const violation: ProctoringViolation = {
     id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     type,
@@ -66,20 +215,20 @@ export async function recordViolation(
     message,
   };
 
-  test.violations.push(violation);
+  if (test) {
+    test.violations.push(violation);
+    test.proctoringScore = Math.max(0, test.proctoringScore - penalty);
+    return { test, violation };
+  }
 
-  // Deduct integrity score: Tab switches deduct 15 points, fullscreen exit 10 points, copy paste 10 points
-  const penalty = type === "TAB_SWITCH" ? 15 : type === "FULLSCREEN_EXIT" ? 10 : 5;
-  test.proctoringScore = Math.max(0, test.proctoringScore - penalty);
-
-  return { test, violation };
+  return { test: await getAssessmentById(assessmentId), violation };
 }
 
 export async function submitAssessment(
   assessmentId: string,
   candidateAnswers: Record<string, number>
 ) {
-  const test = inMemoryAssessments.find((a) => a.id === assessmentId);
+  const test = await getAssessmentById(assessmentId);
   if (!test) return null;
 
   test.candidateAnswers = candidateAnswers;
@@ -97,10 +246,32 @@ export async function submitAssessment(
 
   const totalQuestions = test.questions.length || 1;
   const scorePercentage = Math.round((correctCount / totalQuestions) * 100);
+  const isPassed = scorePercentage >= 60;
 
   test.totalScore = scorePercentage;
-  test.isPassed = scorePercentage >= 60; // 60% passing mark
+  test.isPassed = isPassed;
+
+  try {
+    await prisma.assessment.update({
+      where: { id: assessmentId },
+      data: {
+        submittedAt: new Date(),
+        totalScore: scorePercentage,
+        isPassed,
+      },
+    });
+  } catch (e) {
+    console.error("[submitAssessment] DB error:", e);
+  }
+
+  const inMem = inMemoryAssessments.find((a) => a.id === assessmentId);
+  if (inMem) {
+    inMem.candidateAnswers = candidateAnswers;
+    inMem.submittedAt = test.submittedAt;
+    inMem.status = "SUBMITTED";
+    inMem.totalScore = scorePercentage;
+    inMem.isPassed = isPassed;
+  }
 
   return test;
 }
-

@@ -87,6 +87,21 @@ model User {
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
+  // Recruiter / HR Profile
+  designation    String?
+  companyName    String?      @map("company_name")
+  companyWebsite String?      @map("company_website")
+  companySize    String?      @map("company_size")
+  industry       String?
+  officeLocation String?      @map("office_location")
+  companyBio     String?      @map("company_bio")
+
+  // Candidate Profile
+  headline     String?
+  portfolioUrl String?  @map("portfolio_url")
+  skills       String[] @default([])
+  bio          String?
+
   createdJobs        JobPosting[]
   applications       Application[]
   interviews         Interview[]         @relation("Interviewer")
@@ -99,6 +114,7 @@ model User {
 model JobPosting {
   id                  String    @id @default(uuid())
   title               String
+  companyName         String?   @map("company_name")
   department          String?
   location            String
   employmentType      String    @default("Full-time") @map("employment_type")
@@ -249,7 +265,10 @@ model HrApproval {
 model OfferLetter {
   id                     String      @id @default(uuid())
   applicationId          String      @unique @map("application_id")
-  documentUrl            String      @map("document_url")
+  documentUrl            String      @default("") @map("document_url")
+  companyName            String?     @map("company_name")
+  designation            String?
+  benefits               String[]    @default([])
   offeredSalary          Decimal     @map("offered_salary") @db.Decimal(12, 2)
   joiningDate            DateTime    @map("joining_date")
   expiryDate             DateTime    @map("expiry_date")
