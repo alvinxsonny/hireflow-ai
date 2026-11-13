@@ -4,32 +4,83 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    --background: 150 15% 98%;
+    --foreground: 160 40% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 160 40% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222 47% 11.2%;
+    --popover-foreground: 160 40% 10%;
+    --primary: 158 60% 20%;
+    --primary-foreground: 150 20% 98%;
+    --secondary: 150 20% 95%;
+    --secondary-foreground: 160 40% 15%;
+    --muted: 150 15% 95%;
+    --muted-foreground: 160 15% 45%;
+    --accent: 150 25% 93%;
+    --accent-foreground: 160 45% 15%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 53%;
-    --radius: 0.75rem;
+    --destructive-foreground: 150 20% 98%;
+    --border: 150 18% 88%;
+    --input: 150 18% 88%;
+    --ring: 158 60% 20%;
+    --radius: 0.85rem;
   }
 }
 
 body {
   color: hsl(var(--foreground));
-  background: hsl(var(--background));
+  background-color: #F8FAF8;
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
+/* Tiny Square Grid Background Utility */
+.bg-tiny-grid {
+  background-color: #F8FAF8;
+  background-image:
+    linear-gradient(to right, rgba(11, 41, 30, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 41, 30, 0.055) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+.bg-tiny-grid-subtle {
+  background-image:
+    linear-gradient(to right, rgba(11, 41, 30, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 41, 30, 0.035) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+.bg-tiny-grid-dark {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Infinite Horizontal Scroll Animation */
+@keyframes infiniteScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: infiniteScroll 42s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}

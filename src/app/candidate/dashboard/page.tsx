@@ -124,17 +124,18 @@ export default function CandidateDashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 rounded-3xl p-8 text-white shadow-xl mb-8 relative overflow-hidden">
+      <div className="bg-jade-dark rounded-3xl p-8 text-white shadow-md mb-8 relative overflow-hidden border border-jade-900/20">
+        <div className="absolute inset-0 bg-tiny-grid-dark opacity-10 pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-xs font-semibold mb-3 border border-emerald-400/20 text-emerald-300">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Candidate Portal</span>
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight">
               Welcome, {session?.user?.name || "Applicant"}!
             </h1>
-            <p className="mt-2 text-blue-100 max-w-xl text-xs sm:text-sm leading-relaxed">
+            <p className="mt-2 text-emerald-100/80 max-w-xl text-xs sm:text-sm leading-relaxed">
               Complete your profile details, apply for open positions with your resume, and track
               your assessment and onboarding stages.
             </p>
@@ -142,10 +143,10 @@ export default function CandidateDashboardPage() {
 
           <Link
             href="/jobs"
-            className="self-start sm:self-auto px-5 py-2.5 rounded-xl font-bold text-xs bg-white text-blue-700 hover:bg-blue-50 shadow-md shadow-black/10 transition flex items-center gap-1.5"
+            className="self-start sm:self-auto px-5 py-2.5 rounded-xl font-bold text-xs bg-white text-jade-dark hover:bg-emerald-50 shadow-sm transition flex items-center gap-1.5"
           >
             <span>Explore Open Jobs</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-jade-800" />
           </Link>
         </div>
       </div>
@@ -165,15 +166,15 @@ export default function CandidateDashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b mb-6">
           <div>
             <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-600" />
-              <h2 className="text-lg font-bold text-slate-900">Candidate Primary Profile</h2>
+              <User className="w-4 h-4 text-jade-700" />
+              <h2 className="text-lg font-bold text-jade-dark">Candidate Primary Profile</h2>
               {profile?.isProfileComplete ? (
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <Check className="w-3 h-3 text-emerald-600" />
                   Saved in Database
                 </span>
               ) : (
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <AlertCircle className="w-3 h-3 text-amber-600" />
                   Setup Incomplete
                 </span>
@@ -187,9 +188,9 @@ export default function CandidateDashboardPage() {
           {!isEditingProfile && profile?.isProfileComplete && (
             <button
               onClick={() => setIsEditingProfile(true)}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 self-start sm:self-auto bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200"
+              className="text-xs font-semibold text-jade-800 hover:text-jade-950 flex items-center gap-1.5 self-start sm:self-auto bg-jade-50 px-3 py-1.5 rounded-xl border border-jade-200/80"
             >
-              <Edit2 className="w-3.5 h-3.5" />
+              <Edit2 className="w-3.5 h-3.5 text-jade-700" />
               <span>Edit Profile</span>
             </button>
           )}
@@ -286,11 +287,11 @@ export default function CandidateDashboardPage() {
                 {skills.map((skill) => (
                   <span
                     key={skill}
-                    className="inline-flex items-center gap-1 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg"
+                    className="inline-flex items-center gap-1 text-xs font-medium bg-jade-50 text-jade-800 border border-jade-200/80 px-2.5 py-1 rounded-lg"
                   >
                     {skill}
                     <button type="button" onClick={() => handleRemoveSkill(skill)}>
-                      <X className="w-3 h-3 hover:text-blue-900" />
+                      <X className="w-3 h-3 hover:text-jade-950" />
                     </button>
                   </span>
                 ))}
@@ -304,7 +305,7 @@ export default function CandidateDashboardPage() {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Brief 2-3 sentence overview of your background and achievements..."
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-jade-700/20"
               />
             </div>
 
@@ -321,7 +322,7 @@ export default function CandidateDashboardPage() {
               <button
                 type="submit"
                 disabled={savingProfile}
-                className="px-6 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition disabled:opacity-60 flex items-center gap-1.5"
+                className="px-6 py-2.5 text-xs font-bold text-white bg-jade-dark hover:bg-jade-950 rounded-xl shadow-sm transition disabled:opacity-60 flex items-center gap-1.5"
               >
                 {savingProfile ? (
                   <>
@@ -330,7 +331,7 @@ export default function CandidateDashboardPage() {
                   </>
                 ) : (
                   <>
-                    <Save className="w-3.5 h-3.5" />
+                    <Save className="w-3.5 h-3.5 text-emerald-300" />
                     <span>Save Candidate Profile</span>
                   </>
                 )}

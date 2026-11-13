@@ -3,7 +3,7 @@
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Sparkles, Building2, ArrowRight, UserCheck } from "lucide-react";
+import { ShieldCheck, Building2, ArrowRight, UserCheck } from "lucide-react";
 import { useState } from "react";
 
 export default function HrLoginPage() {
@@ -44,27 +44,27 @@ export default function HrLoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl border shadow-xl p-8">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-tiny-grid">
+      <div className="w-full max-w-md bg-white rounded-3xl border border-jade-900/10 shadow-xl p-8">
         <div className="text-center mb-6">
-          <div className="mx-auto w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-3 border border-indigo-100">
+          <div className="mx-auto w-12 h-12 bg-jade-50 rounded-2xl flex items-center justify-center text-jade-800 mb-3 border border-jade-200/80 shadow-sm">
             <Building2 className="w-6 h-6" />
           </div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 mb-2">
-            <ShieldCheck className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-jade-50 text-jade-900 border border-jade-200/80 mb-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-jade-700" />
             Recruiter & HR Admin Portal
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Staff Sign In</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Access job openings, AI resume rankings, assessment telemetry, and approvals.
+          <h1 className="text-2xl font-bold text-jade-dark tracking-tight">Staff Sign In</h1>
+          <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+            Access job openings, AI resume rankings, assessment telemetry, and candidate approvals.
           </p>
         </div>
 
         {/* If user is already authenticated with Google */}
         {session?.user && (
-          <div className="mb-5 p-4 rounded-xl bg-indigo-50/70 border border-indigo-200 text-left">
-            <div className="flex items-center gap-2 text-xs font-semibold text-indigo-900 mb-1">
-              <UserCheck className="w-4 h-4 text-indigo-600" />
+          <div className="mb-5 p-4 rounded-2xl bg-jade-50/70 border border-jade-200/80 text-left">
+            <div className="flex items-center gap-2 text-xs font-semibold text-jade-900 mb-1">
+              <UserCheck className="w-4 h-4 text-jade-700" />
               <span>Signed In As</span>
             </div>
             <p className="text-sm font-bold text-slate-900 truncate">
@@ -74,10 +74,10 @@ export default function HrLoginPage() {
             <button
               onClick={handleEnterAsHR}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-sm shadow-indigo-500/20 disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-jade-dark hover:bg-jade-950 transition shadow-sm disabled:opacity-60"
             >
               <span>Enter HR Dashboard with this Account</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 text-emerald-300" />
             </button>
             <p className="text-[11px] text-center text-slate-500 mt-2">
               Or sign in with another account below
@@ -90,7 +90,7 @@ export default function HrLoginPage() {
             <button
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 border rounded-xl font-medium text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm border-slate-200 hover:border-slate-300 disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 border rounded-xl font-medium text-slate-700 bg-white hover:bg-jade-50/40 transition shadow-sm border-slate-200 hover:border-jade-800/30 disabled:opacity-60"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -110,9 +110,9 @@ export default function HrLoginPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <span>Continue with Google</span>
+              <span className="text-sm font-semibold text-slate-800">Continue with Google</span>
             </button>
-            <p className="text-[11px] text-center text-slate-400 mt-1.5">
+            <p className="text-[11px] text-center text-slate-400 mt-2">
               Works with any Google account (@gmail.com or corporate domain)
             </p>
           </div>
@@ -121,7 +121,7 @@ export default function HrLoginPage() {
         <div className="mt-8 pt-6 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-500">
             Applying for a job?{" "}
-            <Link href="/candidate/login" className="font-semibold text-indigo-600 hover:underline">
+            <Link href="/candidate/login" className="font-semibold text-jade-800 hover:text-jade-950 hover:underline">
               Switch to Candidate Portal
             </Link>
           </p>

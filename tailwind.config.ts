@@ -12,6 +12,31 @@ const config: Config = {
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        jade: {
+          50: "#F2F9F5",
+          100: "#E2F2E9",
+          200: "#C4E4D3",
+          300: "#99CFB4",
+          400: "#6AB491",
+          500: "#449973",
+          600: "#2F7C5B",
+          700: "#246349",
+          800: "#1D4F3B",
+          900: "#174131",
+          950: "#0B261C",
+          DEFAULT: "#144D38",
+          dark: "#0B291E",
+          deep: "#071D15",
+        },
+        cloudy: {
+          50: "#FCFDFD",
+          100: "#F8FAF9",
+          200: "#F1F5F3",
+          300: "#E5EBE8",
+          400: "#D3DCD7",
+          500: "#B8C5BE",
+          DEFAULT: "#F7FAF8",
+        },
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
@@ -54,4 +79,3 @@ const config: Config = {
   plugins: [require("tailwindcss-animate")],
 };
 export default config;
-
