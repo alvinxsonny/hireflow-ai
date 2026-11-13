@@ -15,27 +15,34 @@ import {
   Building2,
   Calendar,
   ExternalLink,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export default function CandidateOnboardingPage() {
+  const { data: session } = useSession();
+  const userEmail = session?.user?.email || "";
+
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [uploadingDocType, setUploadingDocType] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState("");
 
   useEffect(() => {
+    if (!userEmail) return;
     fetchProfile();
-  }, []);
+  }, [userEmail]);
 
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/onboarding");
+      const res = await fetch(`/api/onboarding?email=${encodeURIComponent(userEmail)}`);
       const data = await res.json();
       if (data.success && data.profile) {
         setProfile(data.profile);
-      } else if (data.profiles && data.profiles.length > 0) {
-        setProfile(data.profiles[0]);
+      } else {
+        setProfile(null);
       }
     } catch (e) {
       console.error("Failed to load onboarding", e);
@@ -97,11 +104,25 @@ export default function CandidateOnboardingPage() {
 
   if (!profile) {
     return (
-      <div className="max-w-4xl mx-auto py-24 text-center">
-        <h2 className="text-xl font-bold text-slate-800">Onboarding Record Not Found</h2>
-        <Link href="/candidate/dashboard" className="text-xs text-blue-600 hover:underline mt-2 inline-block">
-          &larr; Return to Dashboard
-        </Link>
+      <div className="max-w-2xl mx-auto py-20 px-4 text-center">
+        <div className="bg-white rounded-3xl border border-slate-200 p-12 shadow-sm">
+          <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-200">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Onboarding Portal Locked</h2>
+          <p className="text-xs text-slate-500 mt-2 max-w-md mx-auto leading-relaxed">
+            Employee onboarding is activated only after you have completed all interview stages, received an official offer letter from HR, and digitally signed your acceptance.
+          </p>
+          <div className="mt-8 flex justify-center gap-3">
+            <Link
+              href="/candidate/dashboard"
+              className="px-6 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition flex items-center gap-2"
+            >
+              <span>Go to My Dashboard</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

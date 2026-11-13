@@ -15,28 +15,8 @@ export interface OfferRecord {
   createdAt: string;
 }
 
-let inMemoryOffers: OfferRecord[] = [
-  {
-    id: "offer-1",
-    applicationId: "app-101",
-    candidateName: "Alex Johnson",
-    candidateEmail: "alex.johnson@example.com",
-    jobTitle: "Senior Full-Stack Engineer",
-    designation: "Senior Lead Full-Stack Engineer",
-    offeredSalary: 145000,
-    joiningDate: "2026-12-01",
-    expiryDate: "2026-11-25",
-    benefits: [
-      "Comprehensive Health, Dental, and Vision Insurance (100% covered)",
-      "Flexible Remote Work with $1,500 Home Office Stipend",
-      "Unlimited Paid Time Off (PTO) and Paid Parental Leave",
-      "401(k) Retirement Plan with 4% Company Match",
-      "$3,000 Annual Continuing Education & Learning Budget",
-    ],
-    status: "SENT",
-    createdAt: new Date().toISOString(),
-  },
-];
+// Empty initial offers — created only when HR approves a candidate
+let inMemoryOffers: OfferRecord[] = [];
 
 export async function createOfferRecord(data: Omit<OfferRecord, "id" | "status" | "createdAt">) {
   const newOffer: OfferRecord = {

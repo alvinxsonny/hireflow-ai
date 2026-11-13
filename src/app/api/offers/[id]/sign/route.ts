@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { signOfferLetter } from "@/lib/offers-store";
 import { updateApplicationRecord } from "@/lib/applications-store";
+import { createOnboardingProfileForCandidate } from "@/lib/onboarding-store";
 
 export async function POST(
   request: Request,
@@ -18,6 +19,18 @@ export async function POST(
     if (signed.applicationId) {
       const nextStatus = accept !== false ? "ONBOARDING" : "REJECTED";
       await updateApplicationRecord(signed.applicationId, { status: nextStatus });
+
+      if (accept !== false) {
+        // Automatically create onboarding record for the accepted hire
+        await createOnboardingProfileForCandidate(
+          signed.applicationId,
+          signed.candidateName,
+          signed.candidateEmail,
+          signed.designation || signed.jobTitle,
+          "Engineering",
+          signed.joiningDate
+        );
+      }
     }
 
     return NextResponse.json({

@@ -26,68 +26,8 @@ export interface AssessmentRecord {
   createdAt: string;
 }
 
-let inMemoryAssessments: AssessmentRecord[] = [
-  {
-    id: "test-1",
-    applicationId: "app-101",
-    candidateName: "Alex Johnson",
-    candidateEmail: "alex.johnson@example.com",
-    jobTitle: "Senior Full-Stack Engineer",
-    status: "NOT_STARTED",
-    timeLimitMinutes: 15,
-    questions: [
-      {
-        id: "q-1",
-        type: "TECHNICAL",
-        question: "In Next.js 14 App Router, which file naming convention creates an isolated sub-tree error boundary?",
-        options: ["not-found.tsx", "error.tsx", "catch.tsx", "fault.tsx"],
-        correctAnswer: 1,
-        explanation: "error.tsx defines an Error Boundary for a route segment.",
-      },
-      {
-        id: "q-2",
-        type: "TECHNICAL",
-        question: "What is the primary benefit of using PostgreSQL pgvector over external vector search APIs?",
-        options: [
-          "It forces all vector dimensions to equal 1",
-          "It allows ACID-compliant relational joins directly between application data and embeddings in a single database transaction",
-          "It prevents any user authentication checks",
-          "It disables SQL query optimization",
-        ],
-        correctAnswer: 1,
-        explanation: "pgvector keeps vector embeddings and relational entities in the same transactional PostgreSQL instance.",
-      },
-      {
-        id: "q-3",
-        type: "APTITUDE",
-        question: "A background batch worker screens 15 resumes in 60 seconds. At this constant throughput, how many minutes will it take to screen 450 resumes?",
-        options: ["15 minutes", "30 minutes", "45 minutes", "60 minutes"],
-        correctAnswer: 1,
-        explanation: "Rate is 15 resumes/minute. 450 / 15 = 30 minutes.",
-      },
-      {
-        id: "q-4",
-        type: "TECHNICAL",
-        question: "Which HTTP header is typically used to prevent Clickjacking attacks by forbidding iframe embedding from foreign origins?",
-        options: ["X-Frame-Options: DENY", "Access-Control-Allow-Origin: *", "Content-Type: text/html", "ETag: 12345"],
-        correctAnswer: 0,
-        explanation: "X-Frame-Options: DENY instructs browsers not to render the page in a frame or iframe.",
-      },
-      {
-        id: "q-5",
-        type: "APTITUDE",
-        question: "In an A/B test, Variant A converts at 4% and Variant B converts at 6%. What is the relative percentage improvement of Variant B over Variant A?",
-        options: ["2%", "20%", "50%", "150%"],
-        correctAnswer: 2,
-        explanation: "(6 - 4) / 4 = 2 / 4 = 50% relative increase.",
-      },
-    ],
-    candidateAnswers: {},
-    proctoringScore: 100,
-    violations: [],
-    createdAt: new Date().toISOString(),
-  },
-];
+// Empty initial assessments — generated dynamically when HR approves a candidate for testing
+let inMemoryAssessments: AssessmentRecord[] = [];
 
 export async function createAssessment(data: Omit<AssessmentRecord, "id" | "createdAt" | "proctoringScore" | "violations" | "candidateAnswers">) {
   const newAssessment: AssessmentRecord = {

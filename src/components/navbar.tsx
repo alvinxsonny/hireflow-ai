@@ -104,7 +104,7 @@ export function Navbar() {
               </Link>
             </>
           ) : (
-            // Candidate Navigation ONLY (NO HR links!)
+            // Candidate Navigation ONLY (Clean & Focused)
             <>
               <Link
                 href="/candidate/dashboard"
@@ -121,14 +121,6 @@ export function Navbar() {
                 }`}
               >
                 Browse Jobs
-              </Link>
-              <Link
-                href="/candidate/onboarding"
-                className={`transition ${
-                  pathname.startsWith("/candidate/onboarding") ? "text-blue-600 font-bold" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Onboarding
               </Link>
             </>
           )}

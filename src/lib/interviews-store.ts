@@ -25,42 +25,8 @@ export interface InterviewRecord {
   createdAt: string;
 }
 
-let inMemoryInterviews: InterviewRecord[] = [
-  {
-    id: "int-1",
-    applicationId: "app-101",
-    candidateName: "Alex Johnson",
-    candidateEmail: "alex.johnson@example.com",
-    jobTitle: "Senior Full-Stack Engineer",
-    interviewerName: "Sarah Connor (Staff Tech Lead)",
-    scheduledAt: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-    meetingLink: "https://meet.google.com/hfa-rec-live",
-    status: "SCHEDULED",
-    aiSuggestedQuestions: [
-      {
-        category: "TECHNICAL_DEEP_DIVE",
-        question: "How do you structure Server Actions vs Route Handlers in Next.js 14 when handling transactional mutations?",
-        context: "Verifies Next.js 14 backend architecture and state consistency.",
-      },
-      {
-        category: "RESUME_GAP_VERIFICATION",
-        question: "Explain how you would configure pgvector cosine similarity indexes (HNSW vs IVFFlat) for 500,000 resume records.",
-        context: "Alex's resume highlighted PostgreSQL but lacked direct pgvector references.",
-      },
-      {
-        category: "PROBLEM_SOLVING",
-        question: "If an external AI API experiences 503 rate limits during batch processing, what retry and queuing strategy do you implement?",
-        context: "Crucial for reliable automated screening pipelines.",
-      },
-      {
-        category: "BEHAVIORAL",
-        question: "Tell me about a time you mentored a junior developer whose code was repeatedly failing automated CI checks.",
-        context: "Evaluates leadership and team mentorship.",
-      },
-    ],
-    createdAt: new Date().toISOString(),
-  },
-];
+// Empty initial interviews — created only when HR schedules an interview
+let inMemoryInterviews: InterviewRecord[] = [];
 
 export async function createInterview(data: Omit<InterviewRecord, "id" | "createdAt" | "status">) {
   const newInterview: InterviewRecord = {

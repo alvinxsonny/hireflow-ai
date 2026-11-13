@@ -109,10 +109,13 @@ export default function PublicJobsPage() {
       {loading ? (
         <div className="text-center py-20 text-slate-400">Loading open roles...</div>
       ) : filteredJobs.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-2xl border border-slate-200">
-          <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-slate-800">No positions found</h3>
-          <p className="text-sm text-slate-500 mt-1">Try adjusting your search criteria or filters.</p>
+        <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 p-12">
+          <Briefcase className="w-14 h-14 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-slate-900">No active job openings yet</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Our talent acquisition team has not published any open roles yet.
+            Please check back soon or sign in to your candidate dashboard.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
