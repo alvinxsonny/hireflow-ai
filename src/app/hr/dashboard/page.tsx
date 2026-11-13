@@ -83,7 +83,7 @@ export default function HrDashboardPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
         {stats.map((s, idx) => {
           const Icon = s.icon;
           return (
@@ -99,6 +99,37 @@ export default function HrDashboardPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Complete Recruitment & Onboarding Lifecycle Funnel */}
+      <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm mb-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Recruitment & Onboarding Lifecycle Funnel</h2>
+            <p className="text-xs text-slate-500 mt-0.5">End-to-end candidate volume progression through all 7 platform stages.</p>
+          </div>
+          <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+            Automated Audit Active
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
+          {[
+            { step: "1. Jobs", count: "6", label: "Active Roles", color: "bg-blue-50 text-blue-700 border-blue-200" },
+            { step: "2. Screened", count: "148", label: "AI Evaluated", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+            { step: "3. Assessed", count: "34", label: "Proctored Tests", color: "bg-cyan-50 text-cyan-700 border-cyan-200" },
+            { step: "4. Interview", count: "12", label: "AI Co-Pilot", color: "bg-purple-50 text-purple-700 border-purple-200" },
+            { step: "5. Approved", count: "5", label: "HR Approvals", color: "bg-amber-50 text-amber-700 border-amber-200" },
+            { step: "6. Offers", count: "4", label: "Dispatched", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+            { step: "7. Onboard", count: "3", label: "Active Hires", color: "bg-teal-50 text-teal-700 border-teal-200" },
+          ].map((item, idx) => (
+            <div key={idx} className={`p-3.5 rounded-2xl border ${item.color}`}>
+              <span className="text-[10px] font-bold uppercase tracking-wider block opacity-75">{item.step}</span>
+              <span className="text-xl font-black mt-1 block">{item.count}</span>
+              <span className="text-[10px] font-medium opacity-80 mt-0.5 block">{item.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Candidate Pipeline Table */}
