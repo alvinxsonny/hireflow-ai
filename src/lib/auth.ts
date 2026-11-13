@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -17,7 +18,7 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
       authorization: {
         params: {
-          prompt: "consent",
+          prompt: "select_account",
           access_type: "offline",
           response_type: "code",
         },
@@ -79,28 +80,51 @@ export const authOptions: NextAuthOptions = {
         try {
           if (!user.email) return false;
 
-          // Check if user already exists
+          let portalIntent = "CANDIDATE";
+          try {
+            const cookieStore = cookies();
+            const intentVal = cookieStore.get("auth_portal_intent")?.value;
+            if (intentVal === "HR") {
+              portalIntent = "HR";
+            }
+          } catch (e) {
+            // Context without cookies access
+          }
+
+          const targetRole = portalIntent === "HR" ? "RECRUITER" : "CANDIDATE";
+          const targetPortal = portalIntent === "HR" ? "HR" : "CANDIDATE";
+
+          // Upsert user in database with the chosen portal role
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email },
           });
 
           if (!existingUser) {
-            // Determine default role based on email or default to CANDIDATE
             await prisma.user.create({
               data: {
                 email: user.email,
                 fullName: user.name || "Google User",
                 googleId: account.providerAccountId,
                 avatarUrl: user.image,
-                role: "CANDIDATE",
-                portalAccess: "CANDIDATE",
+                role: targetRole,
+                portalAccess: targetPortal,
                 emailVerified: true,
               },
             });
+          } else {
+            // If the user signed in through HR portal, grant RECRUITER role
+            if (portalIntent === "HR") {
+              await prisma.user.update({
+                where: { email: user.email },
+                data: {
+                  role: "RECRUITER",
+                  portalAccess: "HR",
+                },
+              });
+            }
           }
         } catch (error) {
           console.warn("[NextAuth] Database sync warning during Google OAuth:", error);
-          // Allow login even if local DB is offline in demo
         }
       }
       return true;
@@ -112,19 +136,31 @@ export const authOptions: NextAuthOptions = {
         token.portalAccess = (user as any).portalAccess || "CANDIDATE";
       }
 
-      // Check DB for latest role if id is available
-      if (token.email && (!token.role || token.role === "CANDIDATE")) {
+      // Check portal intent cookie
+      let portalIntent: string | undefined;
+      try {
+        const cookieStore = cookies();
+        portalIntent = cookieStore.get("auth_portal_intent")?.value;
+      } catch (e) {}
+
+      if (portalIntent === "HR") {
+        token.role = "RECRUITER";
+        token.portalAccess = "HR";
+      }
+
+      // Sync role from DB
+      if (token.email) {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { email: token.email },
           });
           if (dbUser) {
             token.id = dbUser.id;
-            token.role = dbUser.role;
-            token.portalAccess = dbUser.portalAccess;
+            token.role = portalIntent === "HR" ? "RECRUITER" : dbUser.role;
+            token.portalAccess = portalIntent === "HR" ? "HR" : dbUser.portalAccess;
           }
         } catch (e) {
-          // Ignore if DB is not yet connected
+          // Ignore if DB is not reachable
         }
       }
 
@@ -146,4 +182,3 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET || "hireflow-secret-fallback-key-32chars",
 };
-

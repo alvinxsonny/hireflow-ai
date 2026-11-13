@@ -7,12 +7,14 @@ export default withAuth(
     const pathname = req.nextUrl.pathname;
 
     // Check if user is accessing HR portal
-    if (pathname.startsWith("/hr/dashboard") || pathname.startsWith("/hr/jobs") || pathname.startsWith("/hr/approvals")) {
+    if (pathname.startsWith("/hr") && !pathname.startsWith("/hr/login")) {
+      const intentCookie = req.cookies.get("auth_portal_intent")?.value;
       const isHR =
         token?.role === "ADMIN" ||
         token?.role === "RECRUITER" ||
         token?.role === "HIRING_MANAGER" ||
-        token?.portalAccess === "HR";
+        token?.portalAccess === "HR" ||
+        intentCookie === "HR";
 
       if (!isHR) {
         // Redirect non-HR users to candidate dashboard or HR login with error
