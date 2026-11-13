@@ -301,3 +301,4 @@ model OnboardingDocument {
 
   @@map("onboarding_documents")
 }
+

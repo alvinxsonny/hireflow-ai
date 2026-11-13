@@ -60,3 +60,4 @@ export const config = {
     "/hr/approvals/:path*",
   ],
 };
+

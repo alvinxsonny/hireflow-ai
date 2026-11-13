@@ -146,3 +146,4 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET || "hireflow-secret-fallback-key-32chars",
 };
+

@@ -26,8 +26,14 @@ export function Navbar() {
           <Link href="/" className="hover:text-blue-600 transition">
             Overview
           </Link>
+          <Link href="/jobs" className="hover:text-blue-600 transition font-semibold text-blue-600">
+            Browse Jobs
+          </Link>
           <Link href="/candidate/dashboard" className="hover:text-blue-600 transition">
             Candidate Portal
+          </Link>
+          <Link href="/hr/jobs" className="hover:text-blue-600 transition">
+            Manage Jobs
           </Link>
           <Link href="/hr/dashboard" className="hover:text-blue-600 transition">
             HR Dashboard
@@ -78,3 +84,4 @@ export function Navbar() {
     </header>
   );
 }
+
