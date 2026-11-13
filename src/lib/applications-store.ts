@@ -22,6 +22,7 @@ export interface ApplicationRecord {
     | "HR_REVIEW"
     | "OFFER_PENDING"
     | "OFFER_ACCEPTED"
+    | "ONBOARDING"
     | "HIRED"
     | "REJECTED";
   matchScore?: number;

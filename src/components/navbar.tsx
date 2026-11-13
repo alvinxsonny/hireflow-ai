@@ -41,6 +41,12 @@ export function Navbar() {
           <Link href="/hr/interviews" className="hover:text-blue-600 transition">
             Interviews
           </Link>
+          <Link href="/hr/approvals" className="hover:text-blue-600 transition font-medium text-amber-700">
+            Approvals & Offers
+          </Link>
+          <Link href="/hr/onboarding" className="hover:text-blue-600 transition font-medium text-teal-700">
+            Onboarding Hub
+          </Link>
           <Link href="/hr/dashboard" className="hover:text-blue-600 transition">
             HR Dashboard
           </Link>
