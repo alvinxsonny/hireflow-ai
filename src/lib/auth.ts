@@ -1,6 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 
@@ -22,55 +21,6 @@ export const authOptions: NextAuthOptions = {
           access_type: "offline",
           response_type: "code",
         },
-      },
-    }),
-    CredentialsProvider({
-      id: "demo-login",
-      name: "Demo Fast Login",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        role: { label: "Role", type: "text" }, // "RECRUITER" or "CANDIDATE"
-      },
-      async authorize(credentials) {
-        if (!credentials?.email) return null;
-
-        const role = credentials.role === "RECRUITER" ? "RECRUITER" : "CANDIDATE";
-        const portal = role === "RECRUITER" ? "HR" : "CANDIDATE";
-        const name = role === "RECRUITER" ? "HR Manager (Demo)" : "Candidate (Demo)";
-
-        // Upsert user for demo/dev purposes
-        try {
-          const user = await prisma.user.upsert({
-            where: { email: credentials.email },
-            update: {
-              role: role,
-              portalAccess: portal,
-            },
-            create: {
-              email: credentials.email,
-              fullName: name,
-              role: role,
-              portalAccess: portal,
-              emailVerified: true,
-            },
-          });
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.fullName,
-            role: user.role,
-            portalAccess: user.portalAccess,
-          };
-        } catch (e) {
-          // Fallback if DB is not yet running locally
-          return {
-            id: `demo-${role.toLowerCase()}-id`,
-            email: credentials.email,
-            name: name,
-            role: role,
-            portalAccess: portal,
-          };
-        }
       },
     }),
   ],

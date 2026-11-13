@@ -24,10 +24,10 @@ export default function HrInterviewsPage() {
   // Scheduling modal state
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedAppId, setSelectedAppId] = useState("");
-  const [interviewerName, setInterviewerName] = useState("Sarah Connor (Staff Tech Lead)");
+  const [interviewerName, setInterviewerName] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("14:00");
-  const [meetingLink, setMeetingLink] = useState("https://meet.google.com/hfa-live-room");
+  const [meetingLink, setMeetingLink] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {

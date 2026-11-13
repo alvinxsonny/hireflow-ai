@@ -43,16 +43,6 @@ export default function CandidateLoginPage() {
     router.refresh();
   };
 
-  const handleDemoLogin = () => {
-    setLoading(true);
-    document.cookie = "auth_portal_intent=CANDIDATE; path=/; max-age=86400; SameSite=Lax";
-    signIn("demo-login", {
-      email: "candidate.demo@hireflow.ai",
-      role: "CANDIDATE",
-      callbackUrl: "/candidate/dashboard",
-    });
-  };
-
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl border shadow-xl p-8">
@@ -122,23 +112,6 @@ export default function CandidateLoginPage() {
               Works with any personal or student Google account
             </p>
           </div>
-
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-slate-200"></div>
-            <span className="flex-shrink mx-3 text-xs text-slate-400 uppercase tracking-wider font-semibold">
-              Instant Dev Access
-            </span>
-            <div className="flex-grow border-t border-slate-200"></div>
-          </div>
-
-          <button
-            onClick={handleDemoLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition border border-blue-200"
-          >
-            <Sparkles className="w-4 h-4 text-blue-600" />
-            <span>Fast Demo Login as Candidate</span>
-          </button>
         </div>
 
         <div className="mt-8 pt-6 border-t border-slate-100 text-center">

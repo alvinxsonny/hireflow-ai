@@ -43,16 +43,6 @@ export default function HrLoginPage() {
     router.refresh();
   };
 
-  const handleDemoLogin = () => {
-    setLoading(true);
-    document.cookie = "auth_portal_intent=HR; path=/; max-age=86400; SameSite=Lax";
-    signIn("demo-login", {
-      email: "recruiter.demo@hireflow.ai",
-      role: "RECRUITER",
-      callbackUrl: "/hr/dashboard",
-    });
-  };
-
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl border shadow-xl p-8">
@@ -126,23 +116,6 @@ export default function HrLoginPage() {
               Works with any Google account (@gmail.com or corporate domain)
             </p>
           </div>
-
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-slate-200"></div>
-            <span className="flex-shrink mx-3 text-xs text-slate-400 uppercase tracking-wider font-semibold">
-              Instant Dev Access
-            </span>
-            <div className="flex-grow border-t border-slate-200"></div>
-          </div>
-
-          <button
-            onClick={handleDemoLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition border border-indigo-200"
-          >
-            <Sparkles className="w-4 h-4 text-indigo-600" />
-            <span>Fast Demo Login as HR Recruiter</span>
-          </button>
         </div>
 
         <div className="mt-8 pt-6 border-t border-slate-100 text-center">
