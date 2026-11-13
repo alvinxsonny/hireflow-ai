@@ -308,3 +308,4 @@ export default function HrInterviewsPage() {
     </div>
   );
 }
+
