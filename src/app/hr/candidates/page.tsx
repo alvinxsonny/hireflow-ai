@@ -460,9 +460,18 @@ export default function HrCandidateScreeningPage() {
 
             {/* Recruiter Decision Bar */}
             <div className="mt-8 pt-4 border-t flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs text-slate-400">
-                Current Status: <strong>{activeCandidate.status}</strong>
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">
+                  Current Status: <strong>{activeCandidate.status}</strong>
+                </span>
+                <Link
+                  href={`/hr/assessments/test-1`}
+                  className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-lg hover:bg-indigo-100 transition flex items-center gap-1"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Proctoring Audit</span>
+                </Link>
+              </div>
 
               <div className="flex items-center gap-2">
                 <button
@@ -493,3 +502,4 @@ export default function HrCandidateScreeningPage() {
     </div>
   );
 }
+
