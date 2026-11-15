@@ -1,31 +1,103 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = process.env.GEMINI_API_KEY || "";
-const genAI = new GoogleGenerativeAI(apiKey);
+const groqApiKey = process.env.GROQ_API_KEY || "";
+const geminiApiKey = process.env.GEMINI_API_KEY || "";
+const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
 
-// Preferred model hierarchy for free tier
-const PREFERRED_MODELS = [
-  "gemini-flash-latest",
-  "gemini-3.8-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-flash-lite-latest",
+// Groq models (Fastest AI inference on earth: 300 - 800+ tokens/sec)
+const GROQ_MODELS = [
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
+  "mixtral-8x7b-32768",
 ];
 
+// Fallback Gemini models if Groq key is absent or exhausted
+const GEMINI_MODELS = [
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
+];
+
+/**
+ * Call Groq API via high-performance OpenAI-compatible REST endpoint.
+ */
+async function callGroq<T>(
+  prompt: string,
+  systemInstruction?: string
+): Promise<T> {
+  let lastError: any = null;
+
+  for (const model of GROQ_MODELS) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${groqApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: "system",
+              content: `${systemInstruction || "You are a recruitment AI assistant."} You MUST return ONLY valid raw JSON with no Markdown backticks or commentary.`,
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.2,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorBody = await res.text();
+        throw new Error(`Groq HTTP ${res.status}: ${errorBody}`);
+      }
+
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content || "";
+      const cleaned = content.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+      return JSON.parse(cleaned) as T;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[Groq ${model} attempt failed]:`, err?.message);
+      // Try next Groq model
+    }
+  }
+
+  throw lastError || new Error("All Groq models failed.");
+}
+
+/**
+ * Primary AI execution engine.
+ * Automatically uses ultra-fast Groq if GROQ_API_KEY is present, with seamless fallback to Gemini.
+ */
 export async function callGeminiWithRetry<T>(
   prompt: string,
   systemInstruction?: string,
-  retries = 3,
-  delayMs = 1500
+  retries = 2
 ): Promise<T> {
-  if (!apiKey) {
+  // 1. Try Groq First (Instant 0.2s - 0.4s response)
+  if (groqApiKey) {
+    try {
+      return await callGroq<T>(prompt, systemInstruction);
+    } catch (groqErr) {
+      console.warn("[Groq Error] Falling back to Gemini:", groqErr);
+    }
+  }
+
+  // 2. Fallback to Gemini 1.5 Flash
+  if (!genAI || !geminiApiKey) {
     throw new Error(
-      "GEMINI_API_KEY is not configured in .env. Please add your key from Google AI Studio."
+      "Neither GROQ_API_KEY nor GEMINI_API_KEY is configured. Please set at least one in your environment."
     );
   }
 
   let lastError: any = null;
 
-  for (const modelName of PREFERRED_MODELS) {
+  for (const modelName of GEMINI_MODELS) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         const model = genAI.getGenerativeModel({
@@ -39,31 +111,18 @@ export async function callGeminiWithRetry<T>(
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
-        return JSON.parse(text) as T;
+        const cleaned = text.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+        return JSON.parse(cleaned) as T;
       } catch (error: any) {
         lastError = error;
-        const msg = error?.message || "";
-        const isSpike = error?.status === 503 || msg.includes("high demand") || msg.includes("overloaded");
-        const isRateLimit = error?.status === 429 || msg.includes("RESOURCE_EXHAUSTED");
-
-        if (isSpike || isRateLimit) {
-          if (attempt < retries) {
-            await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
-            continue;
-          }
-          // If all retries on this model failed, break to next model in hierarchy
-          break;
+        if (attempt < retries) {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          continue;
         }
-
-        // If model not found or deprecated, try next model immediately
-        if (error?.status === 404 || msg.includes("not found") || msg.includes("no longer available")) {
-          break;
-        }
-
-        throw error;
+        break;
       }
     }
   }
 
-  throw lastError || new Error("Failed to get response from Gemini API");
+  throw lastError || new Error("Failed to get response from AI providers");
 }
