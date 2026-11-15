@@ -20,14 +20,21 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", "onboarding");
-    await mkdir(uploadsDir, { recursive: true });
+    let fileUrl = "";
+    try {
+      const uploadsDir = path.join(process.cwd(), "public", "uploads", "onboarding");
+      await mkdir(uploadsDir, { recursive: true });
 
-    const safeFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const filePath = path.join(uploadsDir, safeFileName);
-    await writeFile(filePath, buffer);
+      const safeFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const filePath = path.join(uploadsDir, safeFileName);
+      await writeFile(filePath, buffer);
 
-    const fileUrl = `/uploads/onboarding/${safeFileName}`;
+      fileUrl = `/uploads/onboarding/${safeFileName}`;
+    } catch (fsErr) {
+      console.warn("Read-only filesystem on serverless runtime. Using base64 data URL for onboarding document:", fsErr);
+      const mimeType = file.type || "application/octet-stream";
+      fileUrl = `data:${mimeType};base64,${buffer.toString("base64")}`;
+    }
 
     // AI automated format note
     const aiNotes = `Document format verified (${file.name.split(".").pop()?.toUpperCase()}). File size: ${(file.size / 1024).toFixed(0)} KB. Content structure matches required ${docType.replace(/_/g, " ")}.`;

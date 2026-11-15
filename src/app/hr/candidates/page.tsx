@@ -449,6 +449,7 @@ export default function HrCandidateScreeningPage() {
                     href={activeCandidate.resumeFileUrl}
                     target="_blank"
                     rel="noreferrer"
+                    download={activeCandidate.resumeFileName || "resume.pdf"}
                     className="text-blue-600 hover:underline flex items-center gap-1 font-semibold"
                   >
                     <span>Download File</span>

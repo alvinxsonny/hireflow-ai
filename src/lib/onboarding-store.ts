@@ -194,7 +194,13 @@ export async function getAllOnboardingProfiles(): Promise<OnboardingProfile[]> {
           id: d.id,
           docType: d.docType as any,
           title: defaultDocs.find((x) => x.docType === d.docType)?.title || d.docType,
-          fileName: d.fileUrl ? d.fileUrl.split("/").pop() : undefined,
+          fileName:
+            (d.aiValidationDetails as any)?.fileName ||
+            (d.fileUrl?.startsWith("data:")
+              ? `${d.docType}.pdf`
+              : d.fileUrl
+              ? d.fileUrl.split("/").pop()
+              : undefined),
           fileUrl: d.fileUrl || undefined,
           status: d.status as any,
           rejectionReason: d.rejectionReason || undefined,
@@ -251,7 +257,13 @@ export async function getOnboardingProfileByEmail(email: string): Promise<Onboar
           id: d.id,
           docType: d.docType as any,
           title: defaultDocs.find((x) => x.docType === d.docType)?.title || d.docType,
-          fileName: d.fileUrl ? d.fileUrl.split("/").pop() : undefined,
+          fileName:
+            (d.aiValidationDetails as any)?.fileName ||
+            (d.fileUrl?.startsWith("data:")
+              ? `${d.docType}.pdf`
+              : d.fileUrl
+              ? d.fileUrl.split("/").pop()
+              : undefined),
           fileUrl: d.fileUrl || undefined,
           status: d.status as any,
           rejectionReason: d.rejectionReason || undefined,
@@ -289,7 +301,10 @@ export async function uploadOnboardingDocument(
         data: {
           fileUrl,
           status: "SUBMITTED",
-          aiValidationDetails: aiValidationNotes ? { notes: aiValidationNotes } : undefined,
+          aiValidationDetails: {
+            notes: aiValidationNotes || "",
+            fileName: fileName || `${docType}.pdf`,
+          },
         },
       });
     } else {
@@ -299,7 +314,10 @@ export async function uploadOnboardingDocument(
           docType,
           fileUrl,
           status: "SUBMITTED",
-          aiValidationDetails: aiValidationNotes ? { notes: aiValidationNotes } : undefined,
+          aiValidationDetails: {
+            notes: aiValidationNotes || "",
+            fileName: fileName || `${docType}.pdf`,
+          },
         },
       });
     }

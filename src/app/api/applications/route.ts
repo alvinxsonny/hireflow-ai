@@ -73,18 +73,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Job not found" }, { status: 404 });
     }
 
-    // Save resume file locally to public/uploads/resumes/
+    // Save resume file locally if writable, or fall back to base64 data URL in read-only environments (e.g. Vercel)
     const bytes = await resumeFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", "resumes");
-    await mkdir(uploadsDir, { recursive: true });
+    let resumeFileUrl = "";
+    try {
+      const uploadsDir = path.join(process.cwd(), "public", "uploads", "resumes");
+      await mkdir(uploadsDir, { recursive: true });
 
-    const safeFileName = `${Date.now()}-${resumeFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const filePath = path.join(uploadsDir, safeFileName);
-    await writeFile(filePath, buffer);
+      const safeFileName = `${Date.now()}-${resumeFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const filePath = path.join(uploadsDir, safeFileName);
+      await writeFile(filePath, buffer);
 
-    const resumeFileUrl = `/uploads/resumes/${safeFileName}`;
+      resumeFileUrl = `/uploads/resumes/${safeFileName}`;
+    } catch (fsErr) {
+      console.warn("Read-only filesystem detected on serverless runtime. Using base64 data URL for resume:", fsErr);
+      const mimeType = resumeFile.type || (resumeFile.name.endsWith(".pdf") ? "application/pdf" : "application/octet-stream");
+      resumeFileUrl = `data:${mimeType};base64,${buffer.toString("base64")}`;
+    }
 
     // Attempt text extraction
     let rawText = "";

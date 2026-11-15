@@ -34,20 +34,31 @@ export async function POST(request: Request) {
 
     let resumeText = application.resumeRawText || "";
 
-    // If resume text isn't in memory, attempt to read from disk if available
+    // If resume text isn't in memory, attempt to read from data URI or disk if available
     if (!resumeText && application.resumeFileUrl) {
       try {
-        const localPath = path.join(process.cwd(), "public", application.resumeFileUrl);
-        const fileBuffer = await fs.readFile(localPath);
-        if (application.resumeFileName.endsWith(".pdf")) {
-          const pdfParse = require("pdf-parse");
-          const parsed = await pdfParse(fileBuffer);
-          resumeText = parsed.text || "";
+        let fileBuffer: Buffer | null = null;
+        if (application.resumeFileUrl.startsWith("data:")) {
+          const base64Data = application.resumeFileUrl.split(",")[1];
+          if (base64Data) {
+            fileBuffer = Buffer.from(base64Data, "base64");
+          }
         } else {
-          resumeText = fileBuffer.toString("utf-8");
+          const localPath = path.join(process.cwd(), "public", application.resumeFileUrl);
+          fileBuffer = await fs.readFile(localPath);
+        }
+
+        if (fileBuffer) {
+          if (application.resumeFileName?.endsWith(".pdf")) {
+            const pdfParse = require("pdf-parse");
+            const parsed = await pdfParse(fileBuffer);
+            resumeText = parsed.text || "";
+          } else {
+            resumeText = fileBuffer.toString("utf-8");
+          }
         }
       } catch (e) {
-        console.warn("Could not read resume file from disk, using candidate cover letter & metadata:", e);
+        console.warn("Could not read resume file, using candidate cover letter & metadata:", e);
         resumeText = `Candidate: ${application.candidateName}\nCover Letter: ${application.coverLetter}\nPortfolio: ${application.portfolioUrl}`;
       }
     }
