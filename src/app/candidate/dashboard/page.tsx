@@ -492,7 +492,7 @@ export default function CandidateDashboardPage() {
                       className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-jade-800 hover:bg-jade-900 shadow-sm transition inline-flex items-center gap-1.5"
                     >
                       <Check className="w-3.5 h-3.5" />
-                      <span>Open Onboarding Portal &rarr;</span>
+                      <span>View Employee ID & Onboarding &rarr;</span>
                     </Link>
                   ) : app.status === "REJECTED" ? (
                     <span className="text-xs text-red-600 font-medium">Application Not Selected</span>

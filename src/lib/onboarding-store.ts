@@ -28,6 +28,13 @@ export interface OnboardingProfile {
   jobTitle: string;
   department: string;
   joiningDate: string;
+  companyName?: string;
+  hrContactName?: string;
+  hrContactEmail?: string;
+  designation?: string;
+  location?: string;
+  employmentType?: string;
+  offeredSalary?: number;
   orientationStatus: "IN_PROGRESS" | "COMPLETED";
   checklistProgress: number; // 0 to 100
   documents: OnboardingDoc[];
@@ -170,7 +177,12 @@ export async function getAllOnboardingProfiles(): Promise<OnboardingProfile[]> {
         application: {
           include: {
             candidate: true,
-            job: true,
+            job: {
+              include: {
+                createdBy: true,
+              },
+            },
+            offerLetter: true,
           },
         },
         documents: true,
@@ -187,6 +199,16 @@ export async function getAllOnboardingProfiles(): Promise<OnboardingProfile[]> {
       jobTitle: p.application.job.title,
       department: p.department || p.application.job.department || "Engineering",
       joiningDate: p.joiningDate ? p.joiningDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      companyName:
+        p.application.offerLetter?.companyName ||
+        p.application.job.createdBy?.companyName ||
+        "HireFlow Global Technologies",
+      hrContactName: p.application.job.createdBy?.fullName || "HR Talent Team",
+      hrContactEmail: p.application.job.createdBy?.email || "talent@hireflow.ai",
+      designation: p.application.offerLetter?.designation || p.application.job.title,
+      location: p.application.job.location || "Remote / Global",
+      employmentType: p.application.job.employmentType || "Full-time",
+      offeredSalary: p.application.offerLetter?.offeredSalary ? Number(p.application.offerLetter.offeredSalary) : undefined,
       orientationStatus: (p.orientationStatus as any) || "IN_PROGRESS",
       checklistProgress: p.checklistProgress ? Number(p.checklistProgress) : 0,
       documents: p.documents.map((d) => ({
@@ -231,7 +253,12 @@ export async function getOnboardingProfileByEmail(email: string): Promise<Onboar
         application: {
           include: {
             candidate: true,
-            job: true,
+            job: {
+              include: {
+                createdBy: true,
+              },
+            },
+            offerLetter: true,
           },
         },
         documents: true,
@@ -249,6 +276,16 @@ export async function getOnboardingProfileByEmail(email: string): Promise<Onboar
         jobTitle: p.application.job.title,
         department: p.department || p.application.job.department || "Engineering",
         joiningDate: p.joiningDate ? p.joiningDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        companyName:
+          p.application.offerLetter?.companyName ||
+          p.application.job.createdBy?.companyName ||
+          "HireFlow Global Technologies",
+        hrContactName: p.application.job.createdBy?.fullName || "HR Talent Team",
+        hrContactEmail: p.application.job.createdBy?.email || "talent@hireflow.ai",
+        designation: p.application.offerLetter?.designation || p.application.job.title,
+        location: p.application.job.location || "Remote / Global",
+        employmentType: p.application.job.employmentType || "Full-time",
+        offeredSalary: p.application.offerLetter?.offeredSalary ? Number(p.application.offerLetter.offeredSalary) : undefined,
         orientationStatus: (p.orientationStatus as any) || "IN_PROGRESS",
         checklistProgress: p.checklistProgress ? Number(p.checklistProgress) : 0,
         documents: p.documents.map((d) => ({

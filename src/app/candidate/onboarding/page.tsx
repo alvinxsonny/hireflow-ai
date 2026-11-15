@@ -3,20 +3,21 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  Users2,
   CheckCircle2,
-  Clock,
-  UploadCloud,
-  FileCheck2,
-  FileText,
   Sparkles,
-  ShieldCheck,
-  AlertCircle,
   Building2,
   Calendar,
-  ExternalLink,
   Lock,
   ArrowRight,
+  ShieldCheck,
+  Briefcase,
+  User,
+  Mail,
+  MapPin,
+  DollarSign,
+  Copy,
+  Check,
+  FileCheck2,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
@@ -26,8 +27,7 @@ export default function CandidateOnboardingPage() {
 
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [uploadingDocType, setUploadingDocType] = useState<string | null>(null);
-  const [successToast, setSuccessToast] = useState("");
+  const [copiedId, setCopiedId] = useState(false);
 
   useEffect(() => {
     if (!userEmail) return;
@@ -51,61 +51,25 @@ export default function CandidateOnboardingPage() {
     }
   };
 
-  const handleFileUpload = async (docType: string, file: File) => {
-    setUploadingDocType(docType);
-    setSuccessToast("");
-
-    try {
-      const formData = new FormData();
-      formData.append("profileId", profile?.id || "onb-1");
-      formData.append("docType", docType);
-      formData.append("file", file);
-
-      const res = await fetch("/api/onboarding/documents", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (data.success && data.profile) {
-        setProfile(data.profile);
-        setSuccessToast(`✨ ${file.name} uploaded & verified!`);
-      }
-    } catch (e) {
-      console.error("Upload failed", e);
-    } finally {
-      setUploadingDocType(null);
-    }
-  };
-
-  const handleToggleTask = async (taskId: string) => {
-    try {
-      const res = await fetch("/api/onboarding/checklist", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profileId: profile?.id || "onb-1",
-          taskId,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success && data.profile) {
-        setProfile(data.profile);
-      }
-    } catch (e) {
-      console.error("Failed to toggle checklist", e);
-    }
+  const copyEmployeeId = () => {
+    if (!profile?.employeeCode) return;
+    navigator.clipboard.writeText(profile.employeeCode);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
   };
 
   if (loading) {
-    return <div className="max-w-4xl mx-auto py-24 text-center text-slate-400">Loading onboarding portal...</div>;
+    return (
+      <div className="max-w-4xl mx-auto py-24 text-center text-slate-400">
+        Loading employee onboarding details...
+      </div>
+    );
   }
 
   if (!profile) {
     return (
       <div className="max-w-2xl mx-auto py-20 px-4 text-center">
-        <div className="bg-white rounded-3xl border border-slate-200 p-12 shadow-sm">
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-12 shadow-sm">
           <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-200">
             <Lock className="w-8 h-8" />
           </div>
@@ -116,9 +80,9 @@ export default function CandidateOnboardingPage() {
           <div className="mt-8 flex justify-center gap-3">
             <Link
               href="/candidate/dashboard"
-              className="px-6 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl font-bold text-xs text-white bg-jade-800 hover:bg-jade-900 shadow-sm transition flex items-center gap-2"
             >
-              <span>Go to My Dashboard</span>
+              <span>Go to Candidate Dashboard</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -129,207 +93,191 @@ export default function CandidateOnboardingPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Welcome Hero Card */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-3xl p-8 sm:p-10 text-white shadow-xl mb-8 relative overflow-hidden">
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      {/* Welcome Hero Banner */}
+      <div className="bg-gradient-to-r from-jade-950 via-jade-900 to-emerald-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl mb-8 relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-400/20 backdrop-blur-sm text-xs font-semibold text-emerald-200 mb-3 border border-emerald-300/30">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Official Employee Onboarding Portal</span>
+              <span>Offer Accepted • Official New Hire</span>
             </div>
-            <h1 className="text-3xl font-black tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
               Welcome to the Team, {profile.candidateName}!
             </h1>
-            <p className="mt-2 text-blue-100 text-xs sm:text-sm max-w-xl leading-relaxed">
-              Congratulations on accepting your offer for <strong>{profile.jobTitle}</strong>. Please complete your required document uploads and new hire orientation checklist below.
+            <p className="mt-2 text-emerald-100/90 text-xs sm:text-sm max-w-xl leading-relaxed">
+              Your offer letter has been digitally accepted and recorded in the company registry. Below is your official employee credential and company information.
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-center shrink-0">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-200 block">
-              Employee ID
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 text-center shrink-0 min-w-[200px]">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200 block">
+              Official Employee ID
             </span>
-            <span className="text-xl font-black text-white font-mono mt-0.5 block">
-              {profile.employeeCode}
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <span className="text-2xl font-black text-white font-mono tracking-wider">
+                {profile.employeeCode}
+              </span>
+              <button
+                onClick={copyEmployeeId}
+                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition"
+                title="Copy Employee ID"
+              >
+                {copiedId ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+            <span className="text-[11px] text-emerald-200/90 mt-1.5 flex items-center justify-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+              <span>Active Employee</span>
             </span>
-            <span className="text-[10px] text-blue-200 mt-1 block">
-              Start: {profile.joiningDate}
-            </span>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="mt-8 pt-6 border-t border-white/20">
-          <div className="flex items-center justify-between text-xs font-semibold mb-2">
-            <span>Orientation Checklist Progress</span>
-            <span>{profile.checklistProgress}% Completed</span>
-          </div>
-          <div className="w-full bg-white/20 rounded-full h-2.5 overflow-hidden">
-            <div
-              className="bg-emerald-400 h-2.5 rounded-full transition-all duration-500"
-              style={{ width: `${profile.checklistProgress}%` }}
-            />
           </div>
         </div>
       </div>
 
-      {successToast && (
-        <div className="mb-6 p-4 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-semibold flex items-center justify-between border border-emerald-200">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>{successToast}</span>
-          </div>
-          <button onClick={() => setSuccessToast("")} className="text-emerald-600 font-bold">✕</button>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left 2 Cols: Document Submission Cards */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Required Document Submissions</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Uploaded documents are automatically checked by AI and verified by HR.
-                </p>
-              </div>
+      {/* Main Details Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Card 1: Selected Role & Employee Details */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-sm">
+          <div className="flex items-center gap-3 pb-5 border-b border-slate-100 mb-6">
+            <div className="h-10 w-10 rounded-2xl bg-jade-50 text-jade-800 flex items-center justify-center border border-jade-200/60 font-bold">
+              <Briefcase className="w-5 h-5 text-jade-700" />
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {profile.documents.map((doc: any) => {
-                const isUploaded = doc.status === "SUBMITTED" || doc.status === "VERIFIED";
-
-                return (
-                  <div
-                    key={doc.id}
-                    className="p-5 rounded-2xl border border-slate-200 bg-slate-50/60 flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          {doc.docType.replace(/_/g, " ")}
-                        </span>
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                            doc.status === "VERIFIED"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : doc.status === "SUBMITTED"
-                              ? "bg-blue-50 text-blue-700 border-blue-200"
-                              : "bg-amber-50 text-amber-700 border-amber-200"
-                          }`}
-                        >
-                          {doc.status}
-                        </span>
-                      </div>
-
-                      <h4 className="text-xs font-bold text-slate-900 mb-2">{doc.title}</h4>
-
-                      {isUploaded ? (
-                        <div className="space-y-1 text-[11px] text-slate-600">
-                          <div className="flex items-center gap-1 font-semibold text-blue-700">
-                            <FileCheck2 className="w-3.5 h-3.5" />
-                            <span>{doc.fileName}</span>
-                          </div>
-                          {doc.aiValidationNotes && (
-                            <p className="text-[10px] text-slate-500 bg-white p-2 rounded-lg border border-slate-200/60 mt-1">
-                              <strong>AI Note:</strong> {doc.aiValidationNotes}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-[11px] text-slate-400">
-                          Awaiting file submission (PDF, PNG, JPG).
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-200/60">
-                      <input
-                        type="file"
-                        id={`file-${doc.id}`}
-                        accept=".pdf,.png,.jpg,.jpeg"
-                        className="hidden"
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            handleFileUpload(doc.docType, e.target.files[0]);
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor={`file-${doc.id}`}
-                        className="w-full py-2 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 transition text-xs font-semibold text-slate-700 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-                      >
-                        {uploadingDocType === doc.docType ? (
-                          <>
-                            <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
-                            <span>Verifying...</span>
-                          </>
-                        ) : (
-                          <>
-                            <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
-                            <span>{isUploaded ? "Replace Document" : "Upload File"}</span>
-                          </>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-                );
-              })}
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">Your Selected Role</h2>
+              <p className="text-xs text-slate-500">Official employment designation and team placement</p>
             </div>
           </div>
-        </div>
 
-        {/* Right Col: Orientation Checklist */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b">
-              <h3 className="text-base font-bold text-slate-900">Orientation Checklist</h3>
-              <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
-                {profile.checklist.filter((t: any) => t.completed).length}/{profile.checklist.length} Done
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-[#F8FAF8] border border-jade-900/10">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                Position / Job Title
+              </span>
+              <span className="text-base font-extrabold text-jade-950 block">
+                {profile.designation || profile.jobTitle}
               </span>
             </div>
 
-            <div className="space-y-3">
-              {profile.checklist.map((task: any) => (
-                <div
-                  key={task.id}
-                  onClick={() => handleToggleTask(task.id)}
-                  className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-start gap-3 ${
-                    task.completed
-                      ? "bg-emerald-50/60 border-emerald-200 text-slate-700"
-                      : "bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-800"
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border ${
-                      task.completed
-                        ? "bg-emerald-600 border-emerald-600 text-white"
-                        : "bg-white border-slate-300"
-                    }`}
-                  >
-                    {task.completed && <CheckCircle2 className="w-3.5 h-3.5" />}
-                  </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  Department
+                </span>
+                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  {profile.department || "Engineering"}
+                </span>
+              </div>
 
-                  <div>
-                    <h5 className={`text-xs font-bold leading-tight ${task.completed ? "line-through text-slate-500" : "text-slate-900"}`}>
-                      {task.title}
-                    </h5>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                      {task.description}
-                    </p>
-                  </div>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  Start / Joining Date
+                </span>
+                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  {profile.joiningDate}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  Employment Type
+                </span>
+                <span className="text-xs font-bold text-slate-800">
+                  {profile.employmentType || "Full-time"}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  Work Location
+                </span>
+                <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                  {profile.location || "Remote / Global"}
+                </span>
+              </div>
+            </div>
+
+            {profile.offeredSalary && (
+              <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200/70 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
+                    Agreed Annual Compensation
+                  </span>
+                  <span className="text-sm font-black text-emerald-950 font-mono">
+                    ${profile.offeredSalary.toLocaleString()} USD / year
+                  </span>
                 </div>
-              ))}
+                <div className="h-8 w-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                  <DollarSign className="w-4 h-4" />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Card 2: Company Information */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-3 pb-5 border-b border-slate-100 mb-6">
+              <div className="h-10 w-10 rounded-2xl bg-jade-50 text-jade-800 flex items-center justify-center border border-jade-200/60 font-bold">
+                <Building2 className="w-5 h-5 text-jade-700" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight">Company Details</h2>
+                <p className="text-xs text-slate-500">Corporate organization and HR talent contact</p>
+              </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t text-center text-xs text-slate-400">
-              Check all items to finish your formal onboarding orientation.
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-[#F8FAF8] border border-jade-900/10">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  Company Name
+                </span>
+                <span className="text-base font-extrabold text-jade-950 block">
+                  {profile.companyName || "HireFlow Technologies Inc."}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  HR Talent Partner
+                </span>
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{profile.hrContactName || "Corporate HR Team"}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-600">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="font-mono">{profile.hrContactEmail || "talent@hireflow.ai"}</span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-emerald-800">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Onboarding Status: Pre-boarding Complete</span>
+                </div>
+                <p className="text-[11px] text-emerald-800/80 leading-relaxed">
+                  Your credentials and workstation setups are scheduled to be delivered on your official joining date ({profile.joiningDate}).
+                </p>
+              </div>
             </div>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between gap-3">
+            <Link
+              href="/candidate/dashboard"
+              className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-white bg-jade-800 hover:bg-jade-900 shadow-sm transition text-center flex items-center justify-center gap-2"
+            >
+              <span>Return to Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

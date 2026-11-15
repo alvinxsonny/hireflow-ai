@@ -19,7 +19,10 @@ export async function GET() {
 
     const activeJobs = jobs.filter((j: any) => j.status === "PUBLISHED" || !j.status);
     const screenedApps = applications.filter(
-      (a: any) => a.aiScreeningScore !== undefined && a.aiScreeningScore !== null
+      (a: any) =>
+        (a.matchScore !== undefined && a.matchScore !== null) ||
+        (a.aiScreeningScore !== undefined && a.aiScreeningScore !== null) ||
+        a.status !== "APPLIED"
     );
     const assessedApps = applications.filter(
       (a: any) => a.assessmentScore !== undefined || a.status === "ASSESSMENT_COMPLETED"
@@ -78,7 +81,7 @@ export async function GET() {
         id: app.id,
         name: app.candidateName,
         role: app.jobTitle,
-        matchScore: app.aiScreeningScore ?? null,
+        matchScore: app.matchScore ?? app.aiScreeningScore ?? null,
         assessmentScore: app.assessmentScore !== undefined ? `${app.assessmentScore}/100` : "Pending",
         status: app.status,
         statusLabel,
