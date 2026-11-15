@@ -178,39 +178,37 @@ export async function getAllOnboardingProfiles(): Promise<OnboardingProfile[]> {
       orderBy: { createdAt: "desc" },
     });
 
-    if (dbProfiles.length > 0) {
-      return dbProfiles.map((p) => ({
-        id: p.id,
-        applicationId: p.applicationId,
-        candidateName: p.application.candidate.fullName,
-        candidateEmail: p.application.candidate.email,
-        employeeCode: p.employeeCode || "EMP-PENDING",
-        jobTitle: p.application.job.title,
-        department: p.department || p.application.job.department || "Engineering",
-        joiningDate: p.joiningDate ? p.joiningDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-        orientationStatus: (p.orientationStatus as any) || "IN_PROGRESS",
-        checklistProgress: p.checklistProgress ? Number(p.checklistProgress) : 0,
-        documents: p.documents.map((d) => ({
-          id: d.id,
-          docType: d.docType as any,
-          title: defaultDocs.find((x) => x.docType === d.docType)?.title || d.docType,
-          fileName:
-            (d.aiValidationDetails as any)?.fileName ||
-            (d.fileUrl?.startsWith("data:")
-              ? `${d.docType}.pdf`
-              : d.fileUrl
-              ? d.fileUrl.split("/").pop()
-              : undefined),
-          fileUrl: d.fileUrl || undefined,
-          status: d.status as any,
-          rejectionReason: d.rejectionReason || undefined,
-          aiValidationNotes: (d.aiValidationDetails as any)?.notes || undefined,
-          uploadedAt: d.uploadedAt.toISOString(),
-        })),
-        checklist: defaultChecklist,
-        createdAt: p.createdAt.toISOString(),
-      }));
-    }
+    return dbProfiles.map((p) => ({
+      id: p.id,
+      applicationId: p.applicationId,
+      candidateName: p.application.candidate.fullName,
+      candidateEmail: p.application.candidate.email,
+      employeeCode: p.employeeCode || "EMP-PENDING",
+      jobTitle: p.application.job.title,
+      department: p.department || p.application.job.department || "Engineering",
+      joiningDate: p.joiningDate ? p.joiningDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      orientationStatus: (p.orientationStatus as any) || "IN_PROGRESS",
+      checklistProgress: p.checklistProgress ? Number(p.checklistProgress) : 0,
+      documents: p.documents.map((d) => ({
+        id: d.id,
+        docType: d.docType as any,
+        title: defaultDocs.find((x) => x.docType === d.docType)?.title || d.docType,
+        fileName:
+          (d.aiValidationDetails as any)?.fileName ||
+          (d.fileUrl?.startsWith("data:")
+            ? `${d.docType}.pdf`
+            : d.fileUrl
+            ? d.fileUrl.split("/").pop()
+            : undefined),
+        fileUrl: d.fileUrl || undefined,
+        status: d.status as any,
+        rejectionReason: d.rejectionReason || undefined,
+        aiValidationNotes: (d.aiValidationDetails as any)?.notes || undefined,
+        uploadedAt: d.uploadedAt.toISOString(),
+      })),
+      checklist: defaultChecklist,
+      createdAt: p.createdAt.toISOString(),
+    }));
   } catch (e) {
     console.error("[getAllOnboardingProfiles] DB query error:", e);
   }

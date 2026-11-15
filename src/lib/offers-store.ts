@@ -80,25 +80,23 @@ export async function getAllOffers(): Promise<OfferRecord[]> {
       orderBy: { createdAt: "desc" },
     });
 
-    if (dbOffers.length > 0) {
-      return dbOffers.map((o) => ({
-        id: o.id,
-        applicationId: o.applicationId,
-        candidateName: o.application.candidate.fullName,
-        candidateEmail: o.application.candidate.email,
-        jobTitle: o.application.job.title,
-        designation: o.designation || o.application.job.title,
-        companyName: o.companyName || undefined,
-        offeredSalary: Number(o.offeredSalary),
-        joiningDate: o.joiningDate.toISOString().split("T")[0],
-        expiryDate: o.expiryDate.toISOString().split("T")[0],
-        benefits: o.benefits,
-        status: o.status as any,
-        signatureDataUrl: o.candidateSignatureUrl || undefined,
-        signedAt: o.signatureTimestamp?.toISOString() || undefined,
-        createdAt: o.createdAt.toISOString(),
-      }));
-    }
+    return dbOffers.map((o) => ({
+      id: o.id,
+      applicationId: o.applicationId,
+      candidateName: o.application.candidate.fullName,
+      candidateEmail: o.application.candidate.email,
+      jobTitle: o.application.job.title,
+      designation: o.designation || o.application.job.title,
+      companyName: o.companyName || undefined,
+      offeredSalary: Number(o.offeredSalary),
+      joiningDate: o.joiningDate.toISOString().split("T")[0],
+      expiryDate: o.expiryDate.toISOString().split("T")[0],
+      benefits: o.benefits,
+      status: o.status as any,
+      signatureDataUrl: o.candidateSignatureUrl || undefined,
+      signedAt: o.signatureTimestamp?.toISOString() || undefined,
+      createdAt: o.createdAt.toISOString(),
+    }));
   } catch (e) {
     console.error("[getAllOffers] DB error:", e);
   }
@@ -108,8 +106,10 @@ export async function getAllOffers(): Promise<OfferRecord[]> {
 
 export async function getOfferById(id: string): Promise<OfferRecord | null> {
   try {
-    const o = await prisma.offerLetter.findUnique({
-      where: { id },
+    const o = await prisma.offerLetter.findFirst({
+      where: {
+        OR: [{ id }, { applicationId: id }],
+      },
       include: {
         application: {
           include: {
@@ -118,6 +118,7 @@ export async function getOfferById(id: string): Promise<OfferRecord | null> {
           },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
 
     if (o) {
@@ -143,7 +144,7 @@ export async function getOfferById(id: string): Promise<OfferRecord | null> {
     console.error("[getOfferById] DB error:", e);
   }
 
-  return inMemoryOffers.find((o) => o.id === id) || null;
+  return inMemoryOffers.find((o) => o.id === id || o.applicationId === id) || null;
 }
 
 export async function getOfferByApplicationId(applicationId: string): Promise<OfferRecord | null> {
@@ -191,9 +192,12 @@ export async function signOfferLetter(
   signatureDataUrl: string,
   accept: boolean
 ): Promise<OfferRecord | null> {
+  const existing = await getOfferById(offerId);
+  const targetId = existing?.id || offerId;
+
   try {
     await prisma.offerLetter.update({
-      where: { id: offerId },
+      where: { id: targetId },
       data: {
         status: accept ? "ACCEPTED" : "DECLINED",
         candidateSignatureUrl: signatureDataUrl,
@@ -204,7 +208,7 @@ export async function signOfferLetter(
     console.error("[signOfferLetter] DB error:", e);
   }
 
-  const offer = inMemoryOffers.find((o) => o.id === offerId);
+  const offer = inMemoryOffers.find((o) => o.id === targetId || o.applicationId === offerId);
   if (offer) {
     offer.status = accept ? "ACCEPTED" : "DECLINED";
     offer.signatureDataUrl = signatureDataUrl;
@@ -212,5 +216,5 @@ export async function signOfferLetter(
     return offer;
   }
 
-  return getOfferById(offerId);
+  return getOfferById(targetId);
 }

@@ -110,7 +110,8 @@ export default function CandidateAssessmentPage() {
     setTimeout(() => setViolationAlert(null), 5000);
 
     try {
-      const res = await fetch(`/api/assessments/${testId}/violation`, {
+      const targetTestId = assessment?.id || testId;
+      const res = await fetch(`/api/assessments/${targetTestId}/violation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type, message }),
@@ -216,7 +217,8 @@ export default function CandidateAssessmentPage() {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
 
-      const res = await fetch(`/api/assessments/${testId}/submit`, {
+      const targetTestId = assessment?.id || testId;
+      const res = await fetch(`/api/assessments/${targetTestId}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ candidateAnswers: answers }),

@@ -454,25 +454,48 @@ export default function CandidateDashboardPage() {
 
                   {app.status === "ASSESSMENT_PENDING" ? (
                     <Link
-                      href="/candidate/assessments/test-1"
-                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition"
+                      href={`/candidate/assessments/${app.assessmentId || app.id}`}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-sm transition inline-flex items-center gap-1.5"
                     >
-                      Take Proctored Assessment &rarr;
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Take Proctored Assessment &rarr;</span>
                     </Link>
+                  ) : app.status === "ASSESSMENT_COMPLETED" ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Assessment Completed: {app.assessmentScore || 0}%
+                      </span>
+                      <span className="text-xs text-slate-400">Awaiting Interview</span>
+                    </div>
+                  ) : app.status === "INTERVIEW_SCHEDULED" ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        Interview Scheduled
+                      </span>
+                      <span className="text-xs text-slate-400">Check inbox for Google Meet link</span>
+                    </div>
+                  ) : app.status === "HR_REVIEW" ? (
+                    <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                      Interview Done • HR Reviewing Offer
+                    </span>
                   ) : app.status === "OFFER_PENDING" ? (
                     <Link
-                      href="/candidate/offers/offer-1"
-                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition"
+                      href={`/candidate/offers/${app.offerId || app.id}`}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition inline-flex items-center gap-1.5"
                     >
-                      Review & Sign Offer &rarr;
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Review & Sign Offer &rarr;</span>
                     </Link>
-                  ) : app.status === "ONBOARDING" ? (
+                  ) : app.status === "ONBOARDING" || app.status === "OFFER_ACCEPTED" || app.status === "HIRED" ? (
                     <Link
                       href="/candidate/onboarding"
-                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition"
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-jade-800 hover:bg-jade-900 shadow-sm transition inline-flex items-center gap-1.5"
                     >
-                      Open Onboarding Portal &rarr;
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Open Onboarding Portal &rarr;</span>
                     </Link>
+                  ) : app.status === "REJECTED" ? (
+                    <span className="text-xs text-red-600 font-medium">Application Not Selected</span>
                   ) : (
                     <span className="text-xs text-slate-400">Under Review</span>
                   )}

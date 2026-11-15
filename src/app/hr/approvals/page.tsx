@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   UserCheck,
@@ -17,6 +18,17 @@ import {
 } from "lucide-react";
 
 export default function HrApprovalsPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto py-20 text-center text-slate-400">Loading approvals...</div>}>
+      <HrApprovalsContent />
+    </Suspense>
+  );
+}
+
+function HrApprovalsContent() {
+  const searchParams = useSearchParams();
+  const urlAppId = searchParams.get("appId");
+
   const [candidates, setCandidates] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +46,7 @@ export default function HrApprovalsPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [urlAppId]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -51,7 +63,14 @@ export default function HrApprovalsPage() {
       ]);
 
       if (appData.success) {
-        setCandidates(appData.applications || []);
+        const apps = appData.applications || [];
+        setCandidates(apps);
+        if (urlAppId) {
+          const match = apps.find((c: any) => c.id === urlAppId);
+          if (match) {
+            handleOpenOfferModal(match);
+          }
+        }
       }
       if (offData.success) {
         setOffers(offData.offers || []);

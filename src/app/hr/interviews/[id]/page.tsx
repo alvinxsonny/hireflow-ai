@@ -226,9 +226,26 @@ export default function HrInterviewRoomPage() {
             </p>
 
             {submitSuccess && (
-              <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                <span>Scorecard submitted! Candidate advanced to HR Final Approval stage.</span>
+              <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 space-y-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span className="font-semibold">Scorecard submitted! Candidate advanced to HR Final Approval stage.</span>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <Link
+                    href={`/hr/approvals?appId=${interview.applicationId}`}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition inline-flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Proceed to Issue Offer Letter &rarr;</span>
+                  </Link>
+                  <Link
+                    href="/hr/candidates"
+                    className="px-3.5 py-2 rounded-xl text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition"
+                  >
+                    <span>Candidates List</span>
+                  </Link>
+                </div>
               </div>
             )}
 

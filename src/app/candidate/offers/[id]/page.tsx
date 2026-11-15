@@ -38,7 +38,7 @@ export default function CandidateOfferPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.offers) {
-          const found = data.offers.find((o: any) => o.id === offerId);
+          const found = data.offers.find((o: any) => o.id === offerId || o.applicationId === offerId);
           if (found) {
             setOffer(found);
             if (found.status === "ACCEPTED") {
@@ -112,7 +112,8 @@ export default function CandidateOfferPage() {
     }
 
     try {
-      const res = await fetch(`/api/offers/${offerId}/sign`, {
+      const targetId = offer?.id || offerId;
+      const res = await fetch(`/api/offers/${targetId}/sign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

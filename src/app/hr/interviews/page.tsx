@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Video,
@@ -17,6 +18,17 @@ import {
 } from "lucide-react";
 
 export default function HrInterviewsPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto py-20 text-center text-slate-400">Loading interviews...</div>}>
+      <HrInterviewsContent />
+    </Suspense>
+  );
+}
+
+function HrInterviewsContent() {
+  const searchParams = useSearchParams();
+  const urlAppId = searchParams.get("appId");
+
   const [interviews, setInterviews] = useState<any[]>([]);
   const [candidates, setCandidates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,8 +43,11 @@ export default function HrInterviewsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    const tmrw = new Date();
+    tmrw.setDate(tmrw.getDate() + 1);
+    setScheduledDate(tmrw.toISOString().split("T")[0]);
     fetchData();
-  }, []);
+  }, [urlAppId]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -51,7 +66,10 @@ export default function HrInterviewsPage() {
       if (intData.success) setInterviews(intData.interviews || []);
       if (candData.success) {
         setCandidates(candData.applications || []);
-        if (candData.applications && candData.applications.length > 0) {
+        if (urlAppId) {
+          setSelectedAppId(urlAppId);
+          setShowScheduleModal(true);
+        } else if (candData.applications && candData.applications.length > 0) {
           setSelectedAppId(candData.applications[0].id);
         }
       }

@@ -32,6 +32,10 @@ export interface ApplicationRecord {
   strengths?: string[];
   weaknesses?: string[];
   recommendation?: string;
+  assessmentId?: string;
+  assessmentScore?: number;
+  offerId?: string;
+  interviewId?: string;
   createdAt: string;
 }
 
@@ -62,8 +66,40 @@ export async function createApplicationRecord(data: Omit<ApplicationRecord, "id"
       });
     }
 
-    const dbApp = await prisma.application.create({
-      data: {
+    const dbApp = await prisma.application.upsert({
+      where: {
+        jobId_candidateId: {
+          jobId: data.jobId,
+          candidateId: candidateUser.id,
+        },
+      },
+      update: {
+        coverLetter: data.coverLetter,
+        status: data.status as any,
+        resume: {
+          upsert: {
+            create: {
+              fileUrl: data.resumeFileUrl,
+              rawText: data.resumeRawText || "",
+              matchScore: data.matchScore,
+              aiSummary: data.aiSummary,
+              parsedSkills: data.matchedSkills || [],
+              aiStrengths: data.strengths || [],
+              aiWeaknesses: data.weaknesses || [],
+            },
+            update: {
+              fileUrl: data.resumeFileUrl,
+              rawText: data.resumeRawText || "",
+              matchScore: data.matchScore,
+              aiSummary: data.aiSummary,
+              parsedSkills: data.matchedSkills || [],
+              aiStrengths: data.strengths || [],
+              aiWeaknesses: data.weaknesses || [],
+            },
+          },
+        },
+      },
+      create: {
         jobId: data.jobId,
         candidateId: candidateUser.id,
         coverLetter: data.coverLetter,
@@ -109,32 +145,46 @@ export async function getApplications(filter?: { candidateEmail?: string; jobId?
         job: true,
         candidate: true,
         resume: true,
+        assessments: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+        offerLetter: true,
+        interviews: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    if (dbApps.length > 0) {
-      return dbApps.map((a) => ({
-        id: a.id,
-        jobId: a.jobId,
-        jobTitle: a.job.title,
-        candidateName: a.candidate.fullName,
-        candidateEmail: a.candidate.email,
-        candidatePhone: a.candidate.phone || undefined,
-        portfolioUrl: a.candidate.portfolioUrl || undefined,
-        coverLetter: a.coverLetter || undefined,
-        resumeFileName: "resume.pdf",
-        resumeFileUrl: a.resume?.fileUrl || "",
-        resumeRawText: a.resume?.rawText || undefined,
-        status: a.status as any,
-        matchScore: a.resume?.matchScore ? Number(a.resume.matchScore) : undefined,
-        aiSummary: a.resume?.aiSummary || undefined,
-        matchedSkills: a.resume?.parsedSkills || [],
-        strengths: a.resume?.aiStrengths || [],
-        weaknesses: a.resume?.aiWeaknesses || [],
-        createdAt: a.createdAt.toISOString(),
-      }));
-    }
+    return dbApps.map((a) => ({
+      id: a.id,
+      jobId: a.jobId,
+      jobTitle: a.job.title,
+      candidateName: a.candidate.fullName,
+      candidateEmail: a.candidate.email,
+      candidatePhone: a.candidate.phone || undefined,
+      portfolioUrl: a.candidate.portfolioUrl || undefined,
+      coverLetter: a.coverLetter || undefined,
+      resumeFileName: "resume.pdf",
+      resumeFileUrl: a.resume?.fileUrl || "",
+      resumeRawText: a.resume?.rawText || undefined,
+      status: a.status as any,
+      matchScore: a.resume?.matchScore ? Number(a.resume.matchScore) : undefined,
+      aiSummary: a.resume?.aiSummary || undefined,
+      matchedSkills: a.resume?.parsedSkills || [],
+      strengths: a.resume?.aiStrengths || [],
+      weaknesses: a.resume?.aiWeaknesses || [],
+      assessmentId: a.assessments[0]?.id || undefined,
+      assessmentScore:
+        a.assessments[0]?.totalScore !== null && a.assessments[0]?.totalScore !== undefined
+          ? Number(a.assessments[0].totalScore)
+          : undefined,
+      offerId: a.offerLetter?.id || undefined,
+      interviewId: a.interviews[0]?.id || undefined,
+      createdAt: a.createdAt.toISOString(),
+    }));
   } catch (e) {
     console.error("[getApplications] DB query error:", e);
   }
@@ -157,6 +207,15 @@ export async function getApplicationById(id: string): Promise<ApplicationRecord 
         job: true,
         candidate: true,
         resume: true,
+        assessments: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+        offerLetter: true,
+        interviews: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
       },
     });
 
@@ -179,6 +238,13 @@ export async function getApplicationById(id: string): Promise<ApplicationRecord 
         matchedSkills: a.resume?.parsedSkills || [],
         strengths: a.resume?.aiStrengths || [],
         weaknesses: a.resume?.aiWeaknesses || [],
+        assessmentId: a.assessments[0]?.id || undefined,
+        assessmentScore:
+          a.assessments[0]?.totalScore !== null && a.assessments[0]?.totalScore !== undefined
+            ? Number(a.assessments[0].totalScore)
+            : undefined,
+        offerId: a.offerLetter?.id || undefined,
+        interviewId: a.interviews[0]?.id || undefined,
         createdAt: a.createdAt.toISOString(),
       };
     }

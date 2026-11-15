@@ -214,10 +214,16 @@ export default function HrAssessmentDetailPage() {
             {/* HR Decision Action */}
             <div className="mt-8 pt-6 border-t border-slate-100 space-y-2">
               <Link
-                href="/hr/candidates"
+                href={`/hr/interviews?appId=${assessment.applicationId}`}
                 className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition flex items-center justify-center gap-1.5"
               >
-                <span>Advance to Interview Stage &rarr;</span>
+                <span>Schedule Technical Interview &rarr;</span>
+              </Link>
+              <Link
+                href="/hr/candidates"
+                className="w-full py-2 px-4 rounded-xl font-medium text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition flex items-center justify-center"
+              >
+                <span>Return to Candidates</span>
               </Link>
             </div>
           </div>

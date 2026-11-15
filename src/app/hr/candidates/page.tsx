@@ -19,6 +19,8 @@ import {
   Wand2,
   ThumbsUp,
   ThumbsDown,
+  Video,
+  Calendar,
 } from "lucide-react";
 
 export default function HrCandidateScreeningPage() {
@@ -31,6 +33,7 @@ export default function HrCandidateScreeningPage() {
   // Selected candidate for AI Diagnostic Modal
   const [activeCandidate, setActiveCandidate] = useState<any | null>(null);
   const [isScreeningId, setIsScreeningId] = useState<string | null>(null);
+  const [isGeneratingTest, setIsGeneratingTest] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState("");
 
   useEffect(() => {
@@ -64,7 +67,6 @@ export default function HrCandidateScreeningPage() {
       });
       const data = await res.json();
       if (data.success && data.data) {
-        // Update local state
         setCandidates((prev) =>
           prev.map((c) => (c.id === applicationId ? { ...c, ...data.data } : c))
         );
@@ -75,6 +77,44 @@ export default function HrCandidateScreeningPage() {
       console.error("Screening failed", e);
     } finally {
       setIsScreeningId(null);
+    }
+  };
+
+  // Generate Online Assessment with AI
+  const handleGenerateAssessment = async (candidate: any) => {
+    setIsGeneratingTest(true);
+    setActionSuccessMsg("");
+    try {
+      const res = await fetch("/api/assessments/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId: candidate.id }),
+      });
+      const data = await res.json();
+      if (data.success && data.assessment) {
+        setCandidates((prev) =>
+          prev.map((c) =>
+            c.id === candidate.id
+              ? { ...c, status: "ASSESSMENT_PENDING", assessmentId: data.assessment.id }
+              : c
+          )
+        );
+        if (activeCandidate && activeCandidate.id === candidate.id) {
+          setActiveCandidate({
+            ...activeCandidate,
+            status: "ASSESSMENT_PENDING",
+            assessmentId: data.assessment.id,
+          });
+        }
+        setActionSuccessMsg(`🎯 Proctored technical assessment generated & dispatched to ${candidate.candidateName}!`);
+      } else {
+        alert(data.error || "Failed to generate assessment");
+      }
+    } catch (e: any) {
+      console.error("Assessment generation failed", e);
+      alert(e.message || "Failed to generate assessment");
+    } finally {
+      setIsGeneratingTest(false);
     }
   };
 
@@ -463,38 +503,102 @@ export default function HrCandidateScreeningPage() {
             <div className="mt-8 pt-4 border-t flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400">
-                  Current Status: <strong>{activeCandidate.status}</strong>
+                  Current Status: <strong className="text-slate-700">{activeCandidate.status}</strong>
                 </span>
-                <Link
-                  href={`/hr/assessments/test-1`}
-                  className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-lg hover:bg-indigo-100 transition flex items-center gap-1"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Proctoring Audit</span>
-                </Link>
+                {(activeCandidate.assessmentId || activeCandidate.status === "ASSESSMENT_PENDING" || activeCandidate.status === "ASSESSMENT_COMPLETED") && (
+                  <Link
+                    href={`/hr/assessments/${activeCandidate.assessmentId || activeCandidate.id}`}
+                    className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-lg hover:bg-indigo-100 transition flex items-center gap-1"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Proctoring Audit</span>
+                  </Link>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleUpdateStatus(activeCandidate.id, "REJECTED")}
-                  className="px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition border border-red-200"
-                >
-                  Reject
-                </button>
+                {activeCandidate.status !== "REJECTED" && (
+                  <button
+                    onClick={() => handleUpdateStatus(activeCandidate.id, "REJECTED")}
+                    className="px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition border border-red-200"
+                  >
+                    Reject
+                  </button>
+                )}
 
-                <button
-                  onClick={() => handleUpdateStatus(activeCandidate.id, "SHORTLISTED")}
-                  className="px-4 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition border border-blue-200"
-                >
-                  Mark Shortlisted
-                </button>
+                {(activeCandidate.status === "APPLIED" || activeCandidate.status === "SCREENED") && (
+                  <button
+                    onClick={() => handleUpdateStatus(activeCandidate.id, "SHORTLISTED")}
+                    className="px-4 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition border border-blue-200"
+                  >
+                    Mark Shortlisted
+                  </button>
+                )}
 
-                <button
-                  onClick={() => handleUpdateStatus(activeCandidate.id, "ASSESSMENT_PENDING")}
-                  className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition"
-                >
-                  Approve for Online Assessment &rarr;
-                </button>
+                {/* Next Step Action Button */}
+                {activeCandidate.status === "APPLIED" || activeCandidate.status === "SCREENED" || activeCandidate.status === "SHORTLISTED" ? (
+                  <button
+                    onClick={() => handleGenerateAssessment(activeCandidate)}
+                    disabled={isGeneratingTest}
+                    className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition disabled:opacity-60 flex items-center gap-2"
+                  >
+                    {isGeneratingTest ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Generating Test with AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Approve for Online Assessment &rarr;</span>
+                      </>
+                    )}
+                  </button>
+                ) : activeCandidate.status === "ASSESSMENT_PENDING" ? (
+                  <span className="px-4 py-2 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl border border-amber-200">
+                    Assessment Sent • Awaiting Candidate Submission
+                  </span>
+                ) : activeCandidate.status === "ASSESSMENT_COMPLETED" ? (
+                  <Link
+                    href={`/hr/interviews?appId=${activeCandidate.id}`}
+                    className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition flex items-center gap-1.5"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Schedule Technical Interview &rarr;</span>
+                  </Link>
+                ) : activeCandidate.status === "INTERVIEW_SCHEDULED" ? (
+                  <Link
+                    href={`/hr/interviews/${activeCandidate.interviewId || ''}`}
+                    className="px-5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition flex items-center gap-1.5"
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Open Interview Room & Copilot &rarr;</span>
+                  </Link>
+                ) : activeCandidate.status === "HR_REVIEW" ? (
+                  <Link
+                    href={`/hr/approvals?appId=${activeCandidate.id}`}
+                    className="px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Approve & Issue Offer Letter &rarr;</span>
+                  </Link>
+                ) : activeCandidate.status === "OFFER_PENDING" ? (
+                  <Link
+                    href={`/candidate/offers/${activeCandidate.offerId || activeCandidate.id}`}
+                    target="_blank"
+                    className="px-5 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-xl transition flex items-center gap-1.5"
+                  >
+                    <span>View Dispatched Offer &rarr;</span>
+                  </Link>
+                ) : activeCandidate.status === "ONBOARDING" || activeCandidate.status === "OFFER_ACCEPTED" ? (
+                  <Link
+                    href="/hr/onboarding"
+                    className="px-5 py-2 text-xs font-semibold text-white bg-jade-800 hover:bg-jade-900 rounded-xl shadow-sm transition flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Review Onboarding Documents &rarr;</span>
+                  </Link>
+                ) : null}
               </div>
             </div>
           </div>

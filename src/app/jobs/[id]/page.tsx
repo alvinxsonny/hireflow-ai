@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import {
   MapPin,
@@ -21,6 +22,7 @@ import {
 export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const jobId = params.id as string;
 
   const [job, setJob] = useState<any>(null);
@@ -49,6 +51,25 @@ export default function JobDetailPage() {
       })
       .finally(() => setLoading(false));
   }, [jobId]);
+
+  // Prepopulate candidate info if session exists
+  useEffect(() => {
+    if (session?.user?.email) {
+      setCandidateEmail(session.user.email);
+      if (session.user.name) setCandidateName(session.user.name);
+
+      fetch(`/api/candidate/profile?email=${encodeURIComponent(session.user.email)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.profile) {
+            if (data.profile.fullName) setCandidateName(data.profile.fullName);
+            if (data.profile.phone) setCandidatePhone(data.profile.phone);
+            if (data.profile.portfolioUrl) setPortfolioUrl(data.profile.portfolioUrl);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session]);
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();

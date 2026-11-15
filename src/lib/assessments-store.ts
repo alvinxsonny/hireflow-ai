@@ -68,8 +68,10 @@ export async function createAssessment(
 
 export async function getAssessmentById(id: string): Promise<AssessmentRecord | null> {
   try {
-    const a = await prisma.assessment.findUnique({
-      where: { id },
+    const a = await prisma.assessment.findFirst({
+      where: {
+        OR: [{ id }, { applicationId: id }],
+      },
       include: {
         application: {
           include: {
@@ -80,6 +82,7 @@ export async function getAssessmentById(id: string): Promise<AssessmentRecord | 
         questions: true,
         proctoringLogs: true,
       },
+      orderBy: { createdAt: "desc" },
     });
 
     if (a) {
@@ -185,18 +188,20 @@ export async function recordViolation(
   message: string
 ) {
   const penalty = type === "TAB_SWITCH" ? 15 : type === "FULLSCREEN_EXIT" ? 10 : 5;
+  const test = await getAssessmentById(assessmentId);
+  const targetId = test?.id || assessmentId;
 
   try {
     await prisma.proctoringLog.create({
       data: {
-        assessmentId,
+        assessmentId: targetId,
         eventType: type,
         details: { message },
       },
     });
 
     await prisma.assessment.update({
-      where: { id: assessmentId },
+      where: { id: targetId },
       data: {
         proctoringScore: {
           decrement: penalty,
@@ -207,7 +212,7 @@ export async function recordViolation(
     console.error("[recordViolation] DB error:", e);
   }
 
-  const test = inMemoryAssessments.find((a) => a.id === assessmentId);
+  const inMem = inMemoryAssessments.find((a) => a.id === targetId || a.applicationId === assessmentId);
   const violation: ProctoringViolation = {
     id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     type,
@@ -215,13 +220,13 @@ export async function recordViolation(
     message,
   };
 
-  if (test) {
-    test.violations.push(violation);
-    test.proctoringScore = Math.max(0, test.proctoringScore - penalty);
-    return { test, violation };
+  if (inMem) {
+    inMem.violations.push(violation);
+    inMem.proctoringScore = Math.max(0, inMem.proctoringScore - penalty);
+    return { test: inMem, violation };
   }
 
-  return { test: await getAssessmentById(assessmentId), violation };
+  return { test: await getAssessmentById(targetId), violation };
 }
 
 export async function submitAssessment(
@@ -253,7 +258,7 @@ export async function submitAssessment(
 
   try {
     await prisma.assessment.update({
-      where: { id: assessmentId },
+      where: { id: test.id },
       data: {
         submittedAt: new Date(),
         totalScore: scorePercentage,
