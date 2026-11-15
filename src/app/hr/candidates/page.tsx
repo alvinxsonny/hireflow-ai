@@ -322,9 +322,17 @@ export default function HrCandidateScreeningPage() {
                   <td className="py-4 px-6">{getScoreBadge(c.matchScore)}</td>
 
                   <td className="py-4 px-6">
-                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border">
-                      {c.status}
-                    </span>
+                    {c.status === "REJECTED" &&
+                    (c.aiSummary?.includes("switched") || c.aiSummary?.includes("DISQUALIFIED")) ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300">
+                        <AlertTriangle className="w-3 h-3 text-red-600" />
+                        <span>Disqualified (3 Tab Switches)</span>
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border">
+                        {c.status}
+                      </span>
+                    )}
                   </td>
 
                   <td className="py-4 px-6 text-right">
@@ -391,6 +399,30 @@ export default function HrCandidateScreeningPage() {
             </div>
 
             <div className="mt-6 space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+              {/* Proctoring Disqualification Warning */}
+              {activeCandidate.status === "REJECTED" &&
+                (activeCandidate.aiSummary?.includes("switched") ||
+                  activeCandidate.aiSummary?.includes("DISQUALIFIED")) && (
+                  <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300">
+                    <div className="flex items-center gap-2 mb-1 text-xs font-black text-red-900 uppercase">
+                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                      <span>🚨 Candidate Disqualified & Rejected (3 Tab Switches)</span>
+                    </div>
+                    <p className="text-xs text-red-800 leading-relaxed">
+                      This candidate was automatically disqualified and their application rejected after switching browser tabs 3 times during the proctored assessment (suspected copying/cheating).
+                    </p>
+                    {(activeCandidate.assessmentId || activeCandidate.id) && (
+                      <Link
+                        href={`/hr/assessments/${activeCandidate.assessmentId || activeCandidate.id}`}
+                        className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-red-800 bg-red-100 hover:bg-red-200 px-3 py-1.5 rounded-xl border border-red-200 transition"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5 text-red-700" />
+                        <span>View Assessment Telemetry & Proctoring Logs &rarr;</span>
+                      </Link>
+                    )}
+                  </div>
+                )}
+
               {/* Executive AI Verdict */}
               {activeCandidate.aiSummary && (
                 <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200">

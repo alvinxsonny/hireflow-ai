@@ -36,6 +36,12 @@ export default function CandidateAssessmentPage() {
   const [violationAlert, setViolationAlert] = useState<string | null>(null);
   const [proctoringScore, setProctoringScore] = useState(100);
 
+  // Tab switch & cheating ban tracking
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [isBanned, setIsBanned] = useState(false);
+  const tabSwitchCountRef = useRef(0);
+  const isBannedRef = useRef(false);
+
   // Result state
   const [finalResult, setFinalResult] = useState<{
     score: number;
@@ -52,14 +58,24 @@ export default function CandidateAssessmentPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.assessment) {
-          setAssessment(data.assessment);
-          setTimeLeft((data.assessment.timeLimitMinutes || 15) * 60);
-          if (data.assessment.status === "SUBMITTED") {
+          const a = data.assessment;
+          setAssessment(a);
+          setTimeLeft((a.timeLimitMinutes || 15) * 60);
+
+          const switches = a.tabSwitchCount || (a.violations?.filter((v: any) => v.type === "TAB_SWITCH").length || 0);
+          tabSwitchCountRef.current = switches;
+          setTabSwitchCount(switches);
+
+          if (a.isDisqualified || switches >= 3) {
+            isBannedRef.current = true;
+            setIsBanned(true);
+            setProctoringScore(0);
+          } else if (a.status === "SUBMITTED") {
             setExamState("COMPLETED");
             setFinalResult({
-              score: data.assessment.totalScore || 0,
-              isPassed: data.assessment.isPassed || false,
-              proctoringScore: data.assessment.proctoringScore || 100,
+              score: a.totalScore || 0,
+              isPassed: a.isPassed || false,
+              proctoringScore: a.proctoringScore || 100,
             });
           }
         }
@@ -104,21 +120,32 @@ export default function CandidateAssessmentPage() {
   };
 
   // Log Proctoring Infraction
-  const recordInfraction = async (type: string, message: string) => {
+  const recordInfraction = async (type: string, message: string, isDisqualifying = false) => {
     setViolationsCount((prev) => prev + 1);
     setViolationAlert(message);
-    setTimeout(() => setViolationAlert(null), 5000);
+    setTimeout(() => setViolationAlert(null), 6000);
 
     try {
       const targetTestId = assessment?.id || testId;
       const res = await fetch(`/api/assessments/${targetTestId}/violation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, message }),
+        body: JSON.stringify({ type, message, isDisqualifying }),
       });
       const data = await res.json();
       if (data.success) {
         setProctoringScore(data.currentProctoringScore);
+        if (data.isBanned || data.isDisqualified) {
+          isBannedRef.current = true;
+          setIsBanned(true);
+          setProctoringScore(0);
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop());
+          }
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          }
+        }
       }
     } catch (e) {
       console.error("Failed to log proctoring violation", e);
@@ -127,15 +154,43 @@ export default function CandidateAssessmentPage() {
 
   // Setup client proctoring telemetry during ACTIVE state
   useEffect(() => {
-    if (examState !== "ACTIVE") return;
+    if (examState !== "ACTIVE" || isBanned) return;
 
     // 1. Tab Switch / Visibility change
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        recordInfraction(
-          "TAB_SWITCH",
-          "⚠️ WARNING: Tab switch detected! Leaving the assessment tab violates proctoring integrity."
-        );
+        if (isBannedRef.current) return;
+
+        const nextCount = tabSwitchCountRef.current + 1;
+        tabSwitchCountRef.current = nextCount;
+        setTabSwitchCount(nextCount);
+
+        if (nextCount === 1) {
+          recordInfraction(
+            "TAB_SWITCH",
+            "⚠️ STRIKE 1 of 3: Tab switch detected! (2 chances remaining before automatic disqualification)"
+          );
+        } else if (nextCount === 2) {
+          recordInfraction(
+            "TAB_SWITCH",
+            "🚨 FINAL WARNING (STRIKE 2 of 3): Tab switch detected! 1 more switch will immediately ban you and reject your application!"
+          );
+        } else if (nextCount >= 3) {
+          isBannedRef.current = true;
+          setIsBanned(true);
+          setProctoringScore(0);
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop());
+          }
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          }
+          recordInfraction(
+            "TAB_SWITCH",
+            "🚨 STRIKE 3: Maximum 3 tab switches reached. You are disqualified and your application is automatically rejected for suspected copying.",
+            true
+          );
+        }
       }
     };
 
@@ -263,6 +318,59 @@ export default function CandidateAssessmentPage() {
     );
   }
 
+  // SCREEN: BANNED / DISQUALIFIED FOR CHEATING (3 TAB SWITCHES)
+  if (isBanned || assessment.isDisqualified || tabSwitchCount >= 3) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <div className="bg-white rounded-3xl border-2 border-red-300 p-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-2.5 bg-red-600" />
+          <div className="w-16 h-16 rounded-3xl bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 border border-red-200 shadow-sm animate-pulse">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200 mb-3">
+            <span>🚨 Assessment Terminated & Disqualified</span>
+          </div>
+
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            Disqualified for Tab Switching
+          </h2>
+          <p className="text-xs text-slate-600 mt-2 max-w-md mx-auto leading-relaxed">
+            You switched browser tabs <strong>3 times</strong> during this proctored examination. In accordance with strict anti-cheating regulations, your test session has been permanently terminated and your job application has been <strong>automatically rejected</strong> for suspected copying.
+          </p>
+
+          <div className="mt-6 grid grid-cols-2 gap-3 text-left">
+            <div className="p-4 rounded-2xl bg-red-50/70 border border-red-200">
+              <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block">Tab Switches</span>
+              <div className="text-2xl font-black text-red-700 mt-0.5">3 / 3</div>
+              <span className="text-[10px] text-red-600 font-semibold mt-0.5 block">Exceeded Limit (Strike 3)</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-red-50/70 border border-red-200">
+              <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block">Integrity Score</span>
+              <div className="text-2xl font-black text-red-700 mt-0.5">0%</div>
+              <span className="text-[10px] text-red-600 font-semibold mt-0.5 block">Suspected Cheating</span>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 text-left">
+            <strong className="text-slate-800">Recruiter Notified:</strong> The hiring manager has been alerted that you switched tabs 3 times. Your application status is now marked as <strong>REJECTED</strong>.
+          </div>
+
+          <div className="mt-8 pt-6 border-t flex justify-center">
+            <Link
+              href="/candidate/dashboard"
+              className="px-6 py-2.5 rounded-xl font-bold text-xs text-white bg-red-600 hover:bg-red-700 shadow-md shadow-red-500/20 transition inline-flex items-center gap-2"
+            >
+              <span>Return to Candidate Dashboard</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // SCREEN 1: PRE-TEST CHECK
   if (examState === "PRE_TEST") {
     return (
@@ -293,8 +401,8 @@ export default function CandidateAssessmentPage() {
                 <span><strong>Fullscreen Mode:</strong> The test runs in fullscreen. Exiting will log a proctoring infraction.</span>
               </div>
               <div className="flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <span><strong>No Tab Switching:</strong> Navigating away from this window automatically reduces your integrity score.</span>
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span><strong>Strict 3-Tab-Switch Limit:</strong> Switching tabs is limited to at most 2 accidental warnings. On the <strong>3rd tab switch</strong>, you will be <strong>permanently disqualified</strong>, your score reduced to 0%, and your application <strong>automatically rejected</strong> for suspected copying.</span>
               </div>
             </div>
 
@@ -418,8 +526,23 @@ export default function CandidateAssessmentPage() {
           <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
             {assessment.jobTitle}
           </span>
-          <div className="text-xs text-slate-400">
-            Question {currentQIndex + 1} of {assessment.questions.length}
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-xs text-slate-400">
+              Question {currentQIndex + 1} of {assessment.questions.length}
+            </span>
+            <span className="text-slate-600">•</span>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded border inline-flex items-center gap-1 ${
+                tabSwitchCount === 0
+                  ? "bg-slate-800 text-slate-300 border-slate-700"
+                  : tabSwitchCount === 1
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                  : "bg-red-500/20 text-red-300 border-red-500/50 animate-pulse"
+              }`}
+            >
+              <AlertTriangle className="w-3 h-3" />
+              <span>Tab Strikes: {tabSwitchCount}/3</span>
+            </span>
           </div>
         </div>
 

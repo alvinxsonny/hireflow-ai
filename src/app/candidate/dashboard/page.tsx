@@ -495,7 +495,14 @@ export default function CandidateDashboardPage() {
                       <span>View Employee ID & Onboarding &rarr;</span>
                     </Link>
                   ) : app.status === "REJECTED" ? (
-                    <span className="text-xs text-red-600 font-medium">Application Not Selected</span>
+                    app.aiSummary?.includes("switched") || app.aiSummary?.includes("DISQUALIFIED") ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-red-700 font-semibold px-2.5 py-1 rounded-lg bg-red-50 border border-red-200">
+                        <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                        <span>Disqualified (3 Tab Switches - Suspected Copying)</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-red-600 font-medium">Application Not Selected</span>
+                    )
                   ) : (
                     <span className="text-xs text-slate-400">Under Review</span>
                   )}

@@ -7,7 +7,7 @@ export async function POST(
 ) {
   try {
     const testId = params.id;
-    const { type, message } = await request.json();
+    const { type, message, isDisqualifying } = await request.json();
 
     if (!type) {
       return NextResponse.json({ success: false, error: "Violation type is required" }, { status: 400 });
@@ -16,7 +16,8 @@ export async function POST(
     const result = await recordViolation(
       testId,
       type,
-      message || "Proctoring infraction recorded by client telemetry"
+      message || "Proctoring infraction recorded by client telemetry",
+      isDisqualifying
     );
 
     if (!result) {
@@ -25,7 +26,10 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      currentProctoringScore: result.test?.proctoringScore ?? 100,
+      currentProctoringScore: result.test?.proctoringScore ?? 0,
+      isBanned: result.isBanned || false,
+      isDisqualified: result.isDisqualified || false,
+      tabSwitchCount: result.tabSwitchCount || 0,
       violation: result.violation,
     });
   } catch (error: any) {

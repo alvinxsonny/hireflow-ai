@@ -25,6 +25,9 @@ export interface AssessmentRecord {
   startedAt?: string;
   submittedAt?: string;
   createdAt: string;
+  tabSwitchCount?: number;
+  isDisqualified?: boolean;
+  disqualificationReason?: string;
 }
 
 let inMemoryAssessments: AssessmentRecord[] = [];
@@ -86,6 +89,17 @@ export async function getAssessmentById(id: string): Promise<AssessmentRecord | 
     });
 
     if (a) {
+      const violations = a.proctoringLogs.map((p) => ({
+        id: p.id,
+        type: (p.eventType as any) || "TAB_SWITCH",
+        timestamp: p.timestamp.toISOString(),
+        message: (p.details as any)?.message || p.eventType,
+      }));
+      const tabSwitchCount = violations.filter((v) => v.type === "TAB_SWITCH").length;
+      const isDisqualified =
+        tabSwitchCount >= 3 ||
+        (a.proctoringScore ? Number(a.proctoringScore) === 0 && tabSwitchCount > 0 : false);
+
       return {
         id: a.id,
         applicationId: a.applicationId,
@@ -107,12 +121,12 @@ export async function getAssessmentById(id: string): Promise<AssessmentRecord | 
         totalScore: a.totalScore ? Number(a.totalScore) : undefined,
         isPassed: a.isPassed,
         proctoringScore: a.proctoringScore ? Number(a.proctoringScore) : 100,
-        violations: a.proctoringLogs.map((p) => ({
-          id: p.id,
-          type: (p.eventType as any) || "TAB_SWITCH",
-          timestamp: p.timestamp.toISOString(),
-          message: (p.details as any)?.message || p.eventType,
-        })),
+        violations,
+        tabSwitchCount,
+        isDisqualified,
+        disqualificationReason: isDisqualified
+          ? "Candidate switched tabs 3 times during the online assessment. Disqualified & automatically rejected for suspected cheating."
+          : undefined,
         startedAt: a.startedAt?.toISOString() || undefined,
         submittedAt: a.submittedAt?.toISOString() || undefined,
         createdAt: a.createdAt.toISOString(),
@@ -143,6 +157,17 @@ export async function getAssessmentByApplicationId(applicationId: string): Promi
     });
 
     if (a) {
+      const violations = a.proctoringLogs.map((p) => ({
+        id: p.id,
+        type: (p.eventType as any) || "TAB_SWITCH",
+        timestamp: p.timestamp.toISOString(),
+        message: (p.details as any)?.message || p.eventType,
+      }));
+      const tabSwitchCount = violations.filter((v) => v.type === "TAB_SWITCH").length;
+      const isDisqualified =
+        tabSwitchCount >= 3 ||
+        (a.proctoringScore ? Number(a.proctoringScore) === 0 && tabSwitchCount > 0 : false);
+
       return {
         id: a.id,
         applicationId: a.applicationId,
@@ -164,12 +189,12 @@ export async function getAssessmentByApplicationId(applicationId: string): Promi
         totalScore: a.totalScore ? Number(a.totalScore) : undefined,
         isPassed: a.isPassed,
         proctoringScore: a.proctoringScore ? Number(a.proctoringScore) : 100,
-        violations: a.proctoringLogs.map((p) => ({
-          id: p.id,
-          type: (p.eventType as any) || "TAB_SWITCH",
-          timestamp: p.timestamp.toISOString(),
-          message: (p.details as any)?.message || p.eventType,
-        })),
+        violations,
+        tabSwitchCount,
+        isDisqualified,
+        disqualificationReason: isDisqualified
+          ? "Candidate switched tabs 3 times during the online assessment. Disqualified & automatically rejected for suspected cheating."
+          : undefined,
         startedAt: a.startedAt?.toISOString() || undefined,
         submittedAt: a.submittedAt?.toISOString() || undefined,
         createdAt: a.createdAt.toISOString(),
@@ -185,29 +210,81 @@ export async function getAssessmentByApplicationId(applicationId: string): Promi
 export async function recordViolation(
   assessmentId: string,
   type: ProctoringViolation["type"],
-  message: string
+  message: string,
+  isDisqualifying?: boolean
 ) {
   const penalty = type === "TAB_SWITCH" ? 15 : type === "FULLSCREEN_EXIT" ? 10 : 5;
   const test = await getAssessmentById(assessmentId);
   const targetId = test?.id || assessmentId;
 
+  let currentTabSwitches = 0;
+  let isBanned = false;
+
   try {
+    const existingSwitches = await prisma.proctoringLog.count({
+      where: {
+        assessmentId: targetId,
+        eventType: "TAB_SWITCH",
+      },
+    });
+
+    currentTabSwitches = existingSwitches + (type === "TAB_SWITCH" ? 1 : 0);
+    isBanned = Boolean(isDisqualifying || (type === "TAB_SWITCH" && currentTabSwitches >= 3));
+
+    const finalMessage = isBanned
+      ? `🚨 STRIKE 3: Candidate switched tabs 3 times. Automatically disqualified & rejected for suspected copying/cheating.`
+      : message;
+
     await prisma.proctoringLog.create({
       data: {
         assessmentId: targetId,
         eventType: type,
-        details: { message },
+        details: { message: finalMessage, strikeNumber: type === "TAB_SWITCH" ? currentTabSwitches : undefined },
       },
     });
 
-    await prisma.assessment.update({
-      where: { id: targetId },
-      data: {
-        proctoringScore: {
-          decrement: penalty,
+    if (isBanned) {
+      // Disqualify assessment immediately: 0 integrity, 0 score, failed, ended
+      await prisma.assessment.update({
+        where: { id: targetId },
+        data: {
+          proctoringScore: 0,
+          totalScore: 0,
+          isPassed: false,
+          submittedAt: new Date(),
         },
-      },
-    });
+      });
+
+      // Automatically reject application & flag resume
+      const dbAssessment = await prisma.assessment.findUnique({
+        where: { id: targetId },
+        select: { applicationId: true },
+      });
+      const appId = dbAssessment?.applicationId || test?.applicationId;
+      if (appId) {
+        await prisma.application.update({
+          where: { id: appId },
+          data: { status: "REJECTED" },
+        });
+
+        await prisma.resume.updateMany({
+          where: { applicationId: appId },
+          data: {
+            aiSummary:
+              "DISQUALIFIED & REJECTED: Candidate switched browser tabs 3 times during the proctored assessment (suspected copying/cheating). Automatically rejected by anti-cheat proctoring system.",
+          },
+        });
+      }
+    } else {
+      await prisma.assessment.update({
+        where: { id: targetId },
+        data: {
+          proctoringScore: {
+            decrement: penalty,
+          },
+        },
+      });
+    }
   } catch (e) {
     console.error("[recordViolation] DB error:", e);
   }
@@ -217,16 +294,42 @@ export async function recordViolation(
     id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     type,
     timestamp: new Date().toISOString(),
-    message,
+    message: isBanned
+      ? `🚨 STRIKE 3: Candidate switched tabs 3 times. Automatically disqualified & rejected for suspected copying/cheating.`
+      : message,
   };
 
   if (inMem) {
     inMem.violations.push(violation);
-    inMem.proctoringScore = Math.max(0, inMem.proctoringScore - penalty);
-    return { test: inMem, violation };
+    if (isBanned) {
+      inMem.proctoringScore = 0;
+      inMem.totalScore = 0;
+      inMem.isPassed = false;
+      inMem.status = "SUBMITTED";
+      inMem.submittedAt = new Date().toISOString();
+      inMem.isDisqualified = true;
+      inMem.disqualificationReason =
+        "Candidate switched tabs 3 times during the online assessment. Disqualified & automatically rejected for suspected cheating.";
+    } else {
+      inMem.proctoringScore = Math.max(0, inMem.proctoringScore - penalty);
+    }
+    return {
+      test: inMem,
+      violation,
+      isBanned,
+      isDisqualified: isBanned,
+      tabSwitchCount: currentTabSwitches,
+    };
   }
 
-  return { test: await getAssessmentById(targetId), violation };
+  const updatedTest = await getAssessmentById(targetId);
+  return {
+    test: updatedTest,
+    violation,
+    isBanned,
+    isDisqualified: isBanned,
+    tabSwitchCount: currentTabSwitches,
+  };
 }
 
 export async function submitAssessment(
